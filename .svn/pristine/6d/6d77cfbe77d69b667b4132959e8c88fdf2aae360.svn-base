@@ -1,0 +1,226 @@
+<?php
+
+namespace App\Api\Controllers;
+
+
+use App\Http\Controllers\Controller;
+use Dingo\Api\Routing\Helpers;
+use Exception;
+use Validator;
+use Response;
+use Illuminate\Log\Writer;
+use Monolog\Logger;
+
+/**
+ * @SWG\Swagger(
+ *     schemes={"http","https"},
+ *     basePath="/api",
+ *     @SWG\Info(
+ *         version="1.0.0",
+ *         title="CMS API v1",
+ *         termsOfService="",
+ *     ),
+ * )
+ */
+class BaseController extends Controller
+{
+    use Helpers, GoodsFactory;
+
+    public function __construct()
+    {
+        header("Cache-Control:no-cache");
+    }
+
+    public function getModule($module)
+    {
+        return trim(str_replace(["App\Api\Controllers", 'Controller'], "", $module), '\/');
+    }
+
+    public function enterClassLog($module, $member, $class, $function)
+    {
+        $this->log($module, '用户 ' . $member . ' 进入 ' . $class . ' 类的 ' . $function . '() 方法');
+    }
+
+    /**
+     * 成功并返回数据
+     *
+     * @param array $data
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function responseSuccess($data = [], $message = 'success')
+    {
+        return $this->response([
+            'status' => 1,
+            'code' => 200,
+            'message' => $message,
+            'data' => $data,
+        ]);
+    }
+
+    /**
+     * 返回自定义数据
+     *
+     * @param $data
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function response($data)
+    {
+        return Response::json($data);
+    }
+
+    /**
+     * 错误并返回错误信息和状态码
+     *
+     * @param $message
+     * @param int $status_code
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function responseError($message, $code = 0)
+    {
+        \Log::debug('Error IP: ' . get_client_ip() . ', ' . $message);
+        return $this->response([
+            'status' => 0,
+            'code' => $code,
+            'message' => $message,
+        ]);
+    }
+
+    /**
+     * 错误并返回失败信息和状态码
+     *
+     * @param $message
+     * @param int $status_code
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function responseFail($message, $code = 405)
+    {
+        return $this->response([
+            'status' => 0,
+            'code' => $code,
+            'message' => $message,
+        ]);
+    }
+
+    /**
+     * 记录用户行为
+     *
+     * @param $message
+     * @param $data
+     */
+    public function log($module, $message, $data = [], $level = 'info')
+    {
+        //重定义日志记录目录、时间以及等级
+        $logger = new Logger($module);
+        $log = new Writer($logger);
+        $log->useDailyFiles(storage_path() . '/logs/members/member.log', 0, $level);
+        $logger->info($message, $data);
+    }
+
+    /**
+     * 校验参数并返回失败信息或者boolean值
+     *
+     * @param $message
+     * @param array $input
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function dataCheck($input)
+    {
+        $rules = [];
+        if (isset($input['id'])) {
+            $rules['id'] = 'required|integer';
+        }
+        if (isset($input['last_id'])) {
+            $rules['last_id'] = 'integer';
+        }
+        if (isset($input['limit'])) {
+            $rules['limit'] = 'required|integer';
+            $input['limit'] = abs($input['limit']);
+        }
+        if (isset($input['sort'])) {
+            $rules['sort'] = 'required|integer';
+            $input['sort'] = abs($input['sort']);
+        }
+        if (isset($input['category_id'])) {
+            $rules['category_id'] = 'required|integer';
+            $input['category_id'] = abs($input['category_id']);
+        }
+        if (isset($input['member_id'])) {
+            $rules['member_id'] = 'required|integer';
+            $input['member_id'] = abs($input['member_id']);
+        }
+        if (isset($input['moment_id'])) {
+            $rules['moment_id'] = 'required|integer';
+            $input['moment_id'] = abs($input['moment_id']);
+        }
+        if (isset($input['parent_id'])) {
+            $rules['parent_id'] = 'required|integer';
+            $input['parent_id'] = abs($input['parent_id']);
+        }
+        if (isset($input['city_id'])) {
+            $rules['city_id'] = 'required|integer';
+            $input['city_id'] = abs($input['city_id']);
+        }
+        if (isset($input['to_member_id'])) {
+            $rules['to_member_id'] = 'required|integer';
+            $input['to_member_id'] = abs($input['to_member_id']);
+        }
+        if (isset($input['score'])) {
+            $rules['score'] = 'required|integer';
+            $input['score'] = abs($input['score']);
+        }
+        if (isset($input['stars'])) {
+            $rules['stars'] = 'required|integer';
+            $input['stars'] = abs($input['stars']);
+        }
+        if (isset($input['order'])) {
+            $rules['order'] = 'required|integer';
+            $input['order'] = abs($input['order']);
+        }
+        if (isset($input['content'])) {
+            $rules['content'] = 'required|string';
+        }
+        if (isset($input['start'])) {
+            $rules['start'] = 'required|integer';
+            $input['start'] = abs($input['start']);
+        }
+
+        $messages = [
+            'id.required' => 'id不能为空',
+            'id.integer' => 'id必须为整数',
+            'last_id.integer' => 'last_id必须为整数',
+            'limit.required' => 'limit不能为空',
+            'limit.integer' => 'limit必须为整数',
+            'sort.required' => 'sort不能为空',
+            'sort.integer' => 'sort必须为整数',
+            'score.required' => 'score不能为空',
+            'score.integer' => 'score必须为整数',
+            'stars.required' => 'stars不能为空',
+            'stars.integer' => 'stars必须为整数',
+            'category_id.required' => 'category_id不能为空',
+            'category_id.integer' => 'category_id必须为整数',
+            'moment_id.required' => 'moment_id不能为空',
+            'moment_id.integer' => 'moment_id必须为整数',
+            'parent_id.required' => 'parent_id不能为空',
+            'parent_id.integer' => 'parent_id必须为整数',
+            'city_id.required' => 'city_id不能为空',
+            'city_id.integer' => 'city_id必须为整数',
+            'order.required' => 'order不能为空',
+            'order.integer' => 'order必须为整数',
+            'member_id.required' => 'member_id不能为空',
+            'member_id.integer' => 'member_id必须为整数',
+            'to_member_id.required' => 'to_member_id不能为空',
+            'to_member_id.integer' => 'to_member_id必须为整数',
+            'content.required' => 'content不能为空',
+            'start.required' => 'start不能为空',
+            'start.integer' => 'start必须为整数',
+        ];
+
+        $validate = Validator::make($input, $rules, $messages);
+
+        if ($validate->fails()) {
+            throw new Exception($validate->errors()->first());
+        }
+
+        return $input;
+    }
+}

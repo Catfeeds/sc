@@ -1,0 +1,20 @@
+<?php
+
+namespace App\Api\Controllers;
+
+use Exception;
+use Request;
+
+class PushController extends BaseController
+{
+    public function pushToOne()
+    {
+
+    }
+
+    public function pushToAll()
+    {
+        //调用模板，发送推送
+
+    }
+}

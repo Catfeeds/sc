@@ -1,0 +1,28 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
+
+class LiveMember extends Model
+{
+    use SoftDeletes;
+    const TYPE_CLOSE = 0;
+
+    protected $fillable = [
+        'live_id',
+        'member_id',
+        'room_id',
+    ];
+
+    protected $table = 'live_member';
+
+    protected $dates = ['deleted_at'];
+
+    public function getCityAttribute()
+    {
+        return Dictionary::find($this->city)->value;
+    }
+
+}

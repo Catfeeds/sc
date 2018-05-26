@@ -1,0 +1,483 @@
+<?php
+
+namespace App\Api\Controllers;
+
+use App\Models\Comment;
+use App\Models\Course;
+use Request;
+use Exception;
+
+class CourseController extends BaseController
+{
+    public function __construct()
+    {
+    }
+
+    public function transform($course)
+    {
+        $course->cover_url = get_file_url($course->cover_url);
+        $course->poster_url = get_file_url($course->poster_url);
+        $attributes = $course->getAttributes();
+
+        $attributes['created_at'] = empty($course->created_at) ? '' : $course->created_at->toDateTimeString();
+        $attributes['updated_at'] = empty($course->updated_at) ? '' : $course->updated_at->toDateTimeString();
+        return $attributes;
+    }
+
+    /**
+     * @SWG\Get(
+     *   path="/course/lists",
+     *   summary="获取课程列表",
+     *   tags={"/course 课程"},
+     *   @SWG\Parameter(name="category_id", in="query", required=true, description="会员id", type="integer"),
+     *   @SWG\Parameter(name="sort", in="query", required=true, description="排序方式:0综合 1热度 2评价 3时间", type="integer"),
+     *   @SWG\Parameter(name="order", in="query", required=true, description="0降序 1升序", type="string"),
+     *   @SWG\Parameter(name="free", in="query", required=true, description="0所有课程 1免费课程", type="string"),
+     *   @SWG\Parameter(name="limit", in="query", required=true, description="分页大小", type="string"),
+     *   @SWG\Parameter(name="last_id", in="query", required=true, description="最后一个课程id", type="integer"),
+     *   @SWG\Response(
+     *     response=200,
+     *     description="查询成功"
+     *   ),
+     *   @SWG\Response(
+     *     response="404",
+     *     description="没有找到"
+     *   )
+     * )
+     */
+    public function lists()
+    {
+        $filter['category_id'] = Request::get('category_id');
+        $filter['last_id'] = Request::get('last_id') ?: 0;
+        $filter['limit'] = Request::get('limit') ? Request::get('limit') : 20;
+        $filter['order'] = Request::get('order') ?: 0;
+        $filter['free'] = Request::get('free') ?: 0;
+        $filter['sort'] = Request::get('sort') ? Request::get('sort') : 0;
+
+        try {
+            $this->dataCheck($filter);
+
+        } catch (Exception $e) {
+            return $this->responseError($e->getMessage());
+        }
+
+        $order = empty($filter['order']) ? 'desc' : 'asc';
+
+        $key = "course-list-category_id-" . $filter['limit'] . "-" . $filter['last_id'];
+
+        if ($filter['sort'] == Course::SORT_TIME) {
+            //时间排序
+            return cache_remember($key, 1, function () use ($filter, $order) {
+
+                $courses = Course::where('state', course::STATE_PUBLISHED)
+                    ->filter($filter)
+                    ->select('id', 'title', 'subtitle', 'price', 'buy_num', 'lession_num')
+                    ->orderBy('id', $order)
+                    ->limit($filter['limit'])
+                    ->get();
+
+                $courses->transform(function ($couse) {
+                    //获取当前登陆用户
+                    if (\JWTAuth::parseToken()) {
+                        $member = \JWTAuth::parseToken()->authenticate();
+                        $couse->is_bought = in_array($couse->id, $member->courses()->pluck('course_id')->toArray()) ? 1 : 0;
+                    } else {
+                        $couse->is_bought = 0;
+                    }
+
+                    return $this->transform($couse);
+                });
+
+                if ($courses) {
+                    return $this->responseSuccess($courses);
+                } else {
+                    return $this->responseError('获取课程失败');
+                }
+            });
+        } else if ($filter['sort'] == Course::SORT_EVALUATE) {
+            //评价排序
+            return cache_remember($key, 1, function () use ($filter, $order) {
+
+                $courses = Course::where('state', course::STATE_PUBLISHED)
+                    ->filter($filter)
+                    ->select('id', 'title', 'subtitle', 'price', 'comment_num', 'buy_num', 'lession_num')
+                    ->orderBy('comment_num', $order)
+                    ->limit($filter['limit'])
+                    ->get();
+
+                $courses->transform(function ($course) {
+                    //获取当前登陆用户
+                    if (\JWTAuth::parseToken()) {
+                        $member = \JWTAuth::parseToken()->authenticate();
+                        $course->is_bought = in_array($course->id, $member->courses()->pluck('course_id')->toArray()) ? 1 : 0;
+                    } else {
+                        $course->is_bought = 0;
+                    }
+
+                    return $this->transform($course);
+                });
+
+                if ($courses) {
+                    return $this->responseSuccess($courses);
+                } else {
+                    return $this->responseError('获取课程失败');
+                }
+            });
+        }
+
+    }
+
+    /**
+     * @SWG\Post(
+     *   path="/course/detail",
+     *   summary="课程详情",
+     *   tags={"/course 课程"},
+     *   @SWG\Parameter(name="id", in="query", required=true, description="课程ID", type="string"),
+     *   @SWG\Response(
+     *     response=200,
+     *     description="查询成功"
+     *   ),
+     *   @SWG\Response(
+     *     response="404",
+     *     description="没有找到"
+     *   )
+     * )
+     */
+    public function detail()
+    {
+        $input['id'] = Request::get('id');
+
+        try {
+            $this->dataCheck($input);
+
+        } catch (Exception $e) {
+            return $this->responseError($e->getMessage());
+        }
+
+        $course = Course::find($input['id']);
+
+        if ($course) {
+            $course->cover_url = get_file_url($course->cover_url);
+            $course->poster_url = get_file_url($course->poster_url);
+
+            //获取课程章节以及课时
+            $course->chapters = $course->chapters()->select('id', 'title')->get();
+
+            foreach ($course->chapters as $course->chapter) {
+                $lessons = $course->chapter->lessons()->select('id', 'title', 'duration', 'media_url')->get();
+                $lessons->transform(function ($lesson) {
+                    $lesson->media_url = get_file_url($lesson->media_url);
+
+                    return $lesson;
+                });
+                $course->chapter->lessons = $lessons;
+            }
+
+            if (\JWTAuth::getToken()) {
+                $member = \JWTAuth::parseToken()->authenticate();
+                $course->is_bought = in_array($course->id, $member->courses()->pluck('course_id')->toArray()) ? 1 : 0;
+            } else {
+                $course->is_bought = 0;
+            }
+
+            return $this->responseSuccess($course);
+        } else {
+            return $this->responseError('课程不存在');
+        }
+    }
+
+    /**
+     * @SWG\Post(
+     *   path="/course/discuss/lists",
+     *   summary="课程详情",
+     *   tags={"/course 课程"},
+     *   @SWG\Parameter(name="id", in="query", required=true, description="课程ID", type="string"),
+     *   @SWG\Parameter(name="last_id", in="query", required=true, description="最后一条讨论记录id", type="integer"),
+     *   @SWG\Parameter(name="limit", in="query", required=true, description="显示数量", type="integer"),
+     *   @SWG\Response(
+     *     response=200,
+     *     description="查询成功"
+     *   ),
+     *   @SWG\Response(
+     *     response="404",
+     *     description="没有找到"
+     *   )
+     * )
+     */
+    public function discussions()
+    {
+        $filters['id'] = Request::get('id');
+        $filters['last_id'] = Request::get('last_id') ?: 0;
+        $filters['limit'] = Request::get('limit') ?: 20;
+
+        try {
+            //参数校验
+            $check = $this->dataCheck($filters);
+            if (!$check) {
+                return $this->responseError('参数错误，请检查参数');
+            }
+
+            $member = \JWTAuth::parseToken()->authenticate();
+            if (!$member) {
+                return $this->responseError('无效的token,请重新登录');
+            }
+        } catch (Exception $e) {
+            return $this->responseError($e->getMessage());
+        }
+
+        $course = Course::find($filters['id']);
+
+        if (empty($course)) {
+            return $this->responseError('课程不存在');
+        }
+
+        $key = "course-evaluation-list-" . $filters['limit'] . "-" . $filters['last_id'];
+
+        return cache_remember($key, 1, function () use ($filters, $course, $member) {
+            $data['discusses'] = $course->comments()
+                ->where('stars', Comment::NO_STARS)
+                ->filter($filters)
+                ->select('id', 'content', 'member_id', 'to_member_id', 'created_at')
+                ->limit($filters['limit'])
+                ->get();
+            //获取讨论内容总数
+            $data['count'] = $course->comments()->count();
+            //获取讨论点赞数
+            foreach ($data['discusses'] as $key => $discuss) {
+                $discuss['is_liked'] = in_array($member->id, $discuss->likes()->pluck('member_id')->toArray()) ? 1 : 0;
+                $discuss['like_num'] = $discuss->likes()->count();
+
+                $member = $discuss->member()->select('id', 'name', 'avatar_url', 'type')->first();
+                if (!empty($member)) {
+                    $member->avatar_url = get_file_url($member->avatar_url);
+                }
+                $discuss['member'] = $member;
+
+                $to_member = $discuss->toMember()->select('id', 'name', 'avatar_url', 'type')->first();
+                if (!empty($to_member)) {
+                    $to_member->avatar_url = get_file_url($to_member->avatar_url);
+                }
+                $discuss['to_member'] = $to_member;
+            }
+
+            return $this->responseSuccess($data);
+        });
+    }
+
+    /**
+     * @SWG\Get(
+     *   path="/course/search",
+     *   summary="搜索课程",
+     *   tags={"/course 课程"},
+     *   @SWG\Parameter(name="content", in="query", required=true, description="搜索内容", type="string"),
+     *   @SWG\Response(
+     *     response=200,
+     *     description="查询成功"
+     *   ),
+     *   @SWG\Response(
+     *     response="404",
+     *     description="没有找到"
+     *   )
+     * )
+     */
+    public function search()
+    {
+        $input['content'] = Request::get('content');
+
+        try {
+            //参数校验
+            $this->dataCheck($input);
+
+        } catch (Exception $e) {
+            return $this->responseError($e->getMessage());
+        }
+
+        $courses = Course::with('items')
+            ->where('title', 'like', '%' . $input['content'] . '%')
+            ->where('state', Course::STATE_PUBLISHED)
+            ->orderBy('sort', 'desc')
+            ->get();
+        if ($courses) {
+            $courses->transform(function ($course) {
+                return $this->transform($course);
+            });
+
+            return $this->responseSuccess($courses);
+        } else {
+            return $this->responseError('未找到相关课程');
+        }
+
+    }
+
+
+    /**
+     * @SWG\Get(
+     *   path="/course/discuss",
+     *   summary="课程讨论",
+     *   tags={"/course 课程"},
+     *   @SWG\Parameter(name="id", in="query", required=true, description="课程id", type="string"),
+     *   @SWG\Parameter(name="content", in="query", required=true, description="内容", type="string"),
+     *   @SWG\Parameter(name="stars", in="query", required=true, description="评价星级", type="string"),
+     *   @SWG\Response(
+     *     response=200,
+     *     description="查询成功"
+     *   ),
+     *   @SWG\Response(
+     *     response="404",
+     *     description="没有找到"
+     *   )
+     * )
+     */
+    public function discuss()
+    {
+        $input = Request::input();
+
+        try {
+            $this->dataCheck($input);
+
+            $member = \JWTAuth::parseToken()->authenticate();
+            if (!$member) {
+                return $this->responseError('无效的token,请重新登录');
+            }
+        } catch (Exception $e) {
+            return $this->responseError($e->getMessage());
+        }
+
+        $course = Course::find($input['id']);
+        if (empty($course)) {
+            return $this->responseError('课程不存在');
+        }
+
+        $discuss = $course->comments()->create([
+            'state' => Comment::STATE_PASSED,
+            'content' => $input['content'],
+            'member_id' => $member->id,
+        ]);
+        //自增评论数
+        $course->increment('comment_num');
+
+        if ($discuss) {
+
+            $data['discuss'] = $discuss;
+            $data['comment_num'] = $course->comment_num;
+
+            return $this->responseSuccess($data);
+
+        }
+
+    }
+
+    /**
+     * @SWG\Get(
+     *   path="/course/discuss/like",
+     *   summary="点赞喜欢课程讨论",
+     *   tags={"/course 课程"},
+     *   @SWG\Parameter(name="id", in="query", required=true, description="图片ID", type="string"),
+     *   @SWG\Response(
+     *     response=200,
+     *     description="查询成功"
+     *   ),
+     *   @SWG\Response(
+     *     response="404",
+     *     description="没有找到"
+     *   )
+     * )
+     */
+    public function like()
+    {
+        $input = Request::input();
+
+        //参数校验
+        try {
+            $check = $this->dataCheck($input);
+            if (!$check) {
+                return $this->responseError('参数错误，请检查参数');
+            }
+
+            $member = \JWTAuth::parseToken()->authenticate();
+            if (!$member) {
+                return $this->responseError('无效的token,请重新登录');
+            }
+        } catch (Exception $e) {
+            return $this->responseError($e->getMessage());
+        }
+
+        $comment = Comment::find($input['id']);
+
+        if (!$comment) {
+            return $this->responseError('讨论不存在');
+        }
+
+        $like = $comment->likes()->where('member_id', $member->id)->first();
+
+        if ($like) {
+            return $this->responseError('已点赞，请勿重复点赞！');
+        }
+
+        $re = $comment->likes()->create([
+            'member_id' => $member->id,
+        ]);
+
+        $res = $comment->increment('like_num');
+
+        if ($re && $res) {
+            return $this->responseSuccess($comment, '点赞成功');
+        } else {
+            return $this->responseError('点赞失败');
+        }
+    }
+
+    /**
+     * @SWG\Post(
+     *   path=/course/discuss/dislike",
+     *   summary="取消点赞喜欢的讨论",
+     *   tags={"/course 课程"},
+     *   @SWG\Parameter(name="id", in="query", required=true, description="图库ID", type="string"),
+     *   @SWG\Response(
+     *     response=200,
+     *     description="查询成功"
+     *   ),
+     *   @SWG\Response(
+     *     response="404",
+     *     description="没有找到"
+     *   )
+     * )
+     */
+    public function dislike()
+    {
+        $input = Request::input();
+
+        try {
+
+            $check = $this->dataCheck($input);
+            if (!$check) {
+                return $this->responseError('参数错误，请检查参数');
+            }
+
+            $member = \JWTAuth::parseToken()->authenticate();
+            if (!$member) {
+                return $this->responseError('无效的token,请重新登录');
+            }
+        } catch (Exception $e) {
+            return $this->responseError($e->getMessage());
+        }
+
+
+        $comment = Comment::find($input['id']);
+
+        if (!$comment) {
+            return $this->responseError('讨论不存在');
+        }
+
+        $delLike = $comment->likes()->where('member_id', $member->id)->delete();
+
+        if ($delLike) {
+            $comment->decrement('like_num');
+
+            return $this->responseSuccess($comment, '取消点赞成功');
+        } else {
+            return $this->responseError('取消点赞失败');
+        }
+    }
+
+}

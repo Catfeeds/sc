@@ -1,0 +1,57 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Certification;
+use Request;
+use Response;
+use Auth;
+
+class CertificationController extends BaseController
+{
+    public function __construct()
+    {
+    }
+
+    public function index()
+    {
+        return view('admin.members.certify');
+    }
+
+    public function refuse()
+    {
+        $id = Request::get('id');
+        return view('admin.members.refuse', compact('id'));
+    }
+
+    public function state()
+    {
+        $id = Request::input('id');
+        $state = Request::input('state');
+        $reason = Request::input('reason');
+        $certification = Certification::find($id);
+
+        if ($certification->state != Certification::STATE_CERTIFING) {
+            return Response::json([
+                'status_code' => 401,
+                'message' => '不能对已操作教师随意更改状态！',
+                'data' => '',
+            ]);
+        }
+        $certification->user_id = Auth::user()->id;
+        $certification->state = $state;
+        $certification->reason = $reason;
+        $certification->save();
+
+        return Response::json([
+            'status_code' => 200,
+            'message' => 'success',
+            'data' => '',
+        ]);
+    }
+
+    public function table()
+    {
+        return Certification::table();
+    }
+}

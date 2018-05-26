@@ -1,0 +1,67 @@
+<?php
+
+namespace App\Models;
+
+use Request;
+use Response;
+
+class Certification extends BaseModule
+{
+    const STATE_CERTIFY = 0;
+    const STATE_CERTIFING = 1;
+    const STATE_SUCCESS = 2;
+    const STATE_FAILURE = 3;
+
+    const STATES = [
+        0 => '未认证',
+        1 => '正在审核',
+        2 => '审核通过',
+        3 => '审核失败',
+    ];
+
+    protected $fillable = [
+        'member_id',
+        'name',
+        'avatar_url',
+        'title',
+        'degree',
+        'id_card',
+        'state'
+    ];
+
+    protected $dates = ['created_at', 'updated_at'];
+
+    public static function table()
+    {
+        $filters = Request::all();
+
+        $offset = Request::get('offset') ? Request::get('offset') : 0;
+        $limit = Request::get('limit') ? Request::get('limit') : 20;
+
+        $ds = new DataSource();
+        $certifications = static::filter($filters)
+            ->skip($offset)
+            ->limit($limit)
+            ->get();
+
+        $ds->total = static::filter($filters)
+            ->count();
+
+        $certifications->transform(function ($certification) {
+
+            $attributes = $certification->getAttributes();
+
+            //日期类型
+            foreach ($certification->dates as $date) {
+                $attributes[$date] = empty($certification->$date) ? '' : $certification->$date->toDateTimeString();
+            }
+
+            $attributes['state_name'] = $certification->stateName();
+            return $attributes;
+        });
+
+        $ds->rows = $certifications;
+
+        return Response::json($ds);
+    }
+}

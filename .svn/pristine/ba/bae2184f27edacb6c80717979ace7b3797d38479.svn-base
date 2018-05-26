@@ -1,0 +1,161 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Events\UserLogEvent;
+use App\Models\Course;
+use App\Models\Category;
+use App\Models\Member;
+use App\Models\UserLog;
+use Auth;
+use Gate;
+use Request;
+use Response;
+
+/**
+ * 课程
+ */
+class CourseController extends Controller
+{
+    protected $base_url = '/admin/courses';
+    protected $view_path = 'admin.courses';
+
+    public function __construct()
+    {
+    }
+
+    public function index()
+    {
+        if (Gate::denies('@course')) {
+            return abort(403);
+        }
+
+        return view($this->view_path . '.index', ['base_url' => $this->base_url]);
+    }
+
+    public function create()
+    {
+        if (Gate::denies('@course-create')) {
+            \Session::flash('flash_warning', '无此操作权限');
+            return redirect()->back();
+        }
+
+        $member = Member::where('type', Member::TYPE_TEACHER)
+            ->select('id', 'name')
+            ->get()->toArray();
+
+        $member = array_column($member, 'name', 'id');
+
+        return view('admin.courses.create', ['base_url' => $this->base_url, 'member' => $member]);
+    }
+
+    public function edit($id)
+    {
+        if (Gate::denies('@course-edit')) {
+            \Session::flash('flash_warning', '无此操作权限');
+            return redirect()->back();
+        }
+
+        $member = Member::where('type', Member::TYPE_TEACHER)
+            ->select('id', 'name')
+            ->get()->toArray();
+
+        $member = array_column($member, 'name', 'id');
+
+        $course = Course::find($id);
+        $poster_url = explode('|', $course->poster_url);
+
+        $course['price'] = $course['price'] / 100;
+        $course->poster_show_url = $poster_url[0];
+        $element = [
+            '0' => [
+                'name' => 'cover_url',
+                'item' => 0
+            ],
+            '1' => [
+                'name' => 'poster_url',
+                'item' => 1
+            ]
+        ];
+        $module_name = 'course';
+
+        return view('admin.courses.edit', ['member' => $member, 'content' => $course, 'element' => json_encode($element), 'module_name' => $module_name, 'base_url' => $this->base_url, 'back_url' => $this->base_url . '?category_id=' . $course->category_id]);
+    }
+
+    public function store()
+    {
+        $input = Request::all();
+        $input['user_id'] = Auth::user()->id;
+        $input['price'] = $input['price'] * 100;
+
+        $course = Course::stores($input);
+
+        event(new UserLogEvent(UserLog::ACTION_CREATE . '课程', $course->id, Course::MODEL_CLASS));
+
+        \Session::flash('flash_success', '添加成功');
+        return redirect($this->base_url . '?category_id=' . $course->category_id);
+    }
+
+    public function update($id)
+    {
+        $input = Request::all();
+        $input['price'] = $input['price'] * 100;
+        $course = Course::updates($id, $input);
+
+        event(new UserLogEvent(UserLog::ACTION_UPDATE . '课程', $course->id, Course::MODEL_CLASS));
+
+        \Session::flash('flash_success', '修改成功!');
+        return redirect($this->base_url . '?category_id=' . $course->category_id);
+    }
+
+
+    public function save($id)
+    {
+        $course = Course::find($id);
+
+        if (empty($course)) {
+            return;
+        }
+
+        $course->update(Request::all());
+    }
+
+    public function sort()
+    {
+        return Course::sort();
+    }
+
+    public function recommend($id)
+    {
+        $course = Course::find($id);
+        $course->recommended = !$course->recommended;
+        $course->save();
+    }
+
+
+    public function state()
+    {
+        $input = request()->all();
+        Course::state($input);
+
+        $ids = $input['ids'];
+        $stateName = Course::getStateName($input['state']);
+
+        //记录日志
+        foreach ($ids as $id) {
+            event(new UserLogEvent('变更' . '课程' . UserLog::ACTION_STATE . ':' . $stateName, $id, Course::MODEL_CLASS));
+        }
+
+    }
+
+    public function table()
+    {
+        return Course::table();
+    }
+
+    public function categories()
+    {
+        return Response::json(Category::tree('1', '0', '课程', false));
+
+    }
+}

@@ -1,0 +1,140 @@
+<?php
+
+namespace App\Api\Controllers;
+
+use App\Models\Live;
+use Exception;
+use Request;
+
+class LiveController extends BaseController
+{
+    public function transform($live)
+    {
+        $member = null;
+        if (\JWTAuth::getToken()) {
+            try {
+                $member = \JWTAuth::parseToken()->authenticate();
+            } catch (Exception $e) {
+
+            }
+        }
+        if ($member) {
+            $liveMember = $live->members()->where('member_id', $member->id)->first();
+            $live->room_id = empty($liveMember->pivot->room_id) ? 0 : $liveMember->pivot->room_id;
+            $live->is_bought = in_array($live->id, $member->lives()->pluck('live_id')->toArray()) ? 1 : 0;
+        } else {
+            $live->room_id = 0;
+            $live->is_bought = 0;
+        }
+        $live->member = $live->member()->select('id as member_id', 'name', 'title', 'avatar_url')->first();
+        if (!empty($live->member)) {
+            $live->member->avatar_url = get_file_url($live->member->avatar_url);
+        }
+
+        $live->cover_url = get_file_url($live->cover_url);
+
+        $res = strpos($live->poster_url, '|');
+        if ($res) {
+            $poster_url = explode('|', $live->poster_url);
+            $poster['url'] = get_file_url($poster_url[0]);
+            $poster['w'] = $poster_url[2];
+            $poster['h'] = $poster_url[3];
+            $live->poster = $poster;
+        } else {
+            $poster['url'] = get_file_url($live->poster_url);
+            $poster['w'] = 0;
+            $poster['h'] = 0;
+            $live->poster = $poster;
+        }
+
+        $live->stream_url = get_file_url($live->stream_url);
+        $attributes = $live->getAttributes();
+
+        return $attributes;
+    }
+
+    /**
+     * @SWG\Get(
+     *   path="/live/detail",
+     *   summary="获取直播详情",
+     *   tags={"/live 直播"},
+     *   @SWG\Response(
+     *     response=200,
+     *     description="获取直播详情成功"
+     *   ),
+     *   @SWG\Response(
+     *     response="404",
+     *     description="没有找到路由"
+     *   )
+     * )
+     */
+    public function detail()
+    {
+        $input['id'] = Request::get('id');
+
+        //参数校验
+        try {
+            $this->dataCheck($input);
+
+        } catch (Exception $e) {
+            return $this->responseError($e->getMessage());
+        }
+
+        $live = Live::find($input['id']);
+
+        $live = $this->transform($live);
+
+        if (empty($live)) {
+            return $this->responseError('未找到此直播', 404);
+        }
+
+        return $this->responseSuccess($live);
+    }
+
+    /**
+     * @SWG\Get(
+     *   path="/live/menu",
+     *   summary="获取直播菜单",
+     *   tags={"/live 直播"},
+     *   @SWG\Response(
+     *     response=200,
+     *     description="获取直播菜单成功"
+     *   ),
+     *   @SWG\Response(
+     *     response="404",
+     *     description="没有找到路由"
+     *   )
+     * )
+     */
+    public function lists()
+    {
+        $filter['last_id'] = Request::get('last_id') ?: 0;
+        $filter['limit'] = Request::get('limit') ?: 20;
+
+        //参数校验
+        try {
+            $check = $this->dataCheck($filter);
+            if (!$check) {
+                return $this->responseError('参数错误，请检查参数');
+            }
+        } catch (Exception $e) {
+            return $this->responseError($e->getMessage());
+        }
+
+        $lives = Live::filter($filter)
+            ->select('id', 'title', 'intro', 'cover_url', 'start_at', 'duration', 'bought_num', 'is_top', 'state', 'member_id', 'price', 'poster_url', 'stream_url')
+            ->orderBy('is_top')
+            ->orderBy('start_at', 'desc')
+            ->limit($filter['limit'])
+            ->get();
+
+        $lives->transform(function ($live) {
+            $live->price = $live->price / 100;
+            return $this->transform($live);
+        });
+
+        return $this->responseSuccess($lives);
+
+    }
+
+}

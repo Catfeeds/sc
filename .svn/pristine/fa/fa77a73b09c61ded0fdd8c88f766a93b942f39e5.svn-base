@@ -1,0 +1,141 @@
+<?php
+
+namespace App\Api\Controllers;
+
+use App\Models\OfflineComment;
+use App\Models\Record;
+use Request;
+use Exception;
+
+class OfflineCommentController extends BaseController
+{
+    public function __construct()
+    {
+    }
+
+    public function transform($offlinecomment)
+    {
+        $attributes = $offlinecomment->getAttributes();
+
+        $attributes['created_at'] = empty($offlinecomment->created_at) ? '' : $offlinecomment->created_at->toDateTimeString();
+        $attributes['updated_at'] = empty($offlinecomment->updated_at) ? '' : $offlinecomment->updated_at->toDateTimeString();
+        return $attributes;
+    }
+
+    /**
+     * @SWG\Get(
+     *   path="/reservation/comment/lists",
+     *   summary="获取约课课程列表",
+     *   tags={"/reservation 约课"},
+     *   @SWG\Parameter(name="city_id", in="query", required=true, description="城市id", type="string"),
+     *   @SWG\Parameter(name="last_id", in="query", required=true, description="最后一条记录id", type="string"),
+     *   @SWG\Parameter(name="limit", in="query", required=true, description="分页大小", type="string"),
+     *   @SWG\Response(
+     *     response=200,
+     *     description="获取约课老师列表成功"
+     *   ),
+     *   @SWG\Response(
+     *     response="404",
+     *     description="没有找到路由"
+     *   )
+     * )
+     */
+    public function lists()
+    {
+        $filter['last_id'] = Request::get('last_id') ?: 0;
+        $filter['city_id'] = Request::get('city_id') ?: 0;
+        $filter['limit'] = Request::get('limit') ?: 20;
+        //参数校验
+        try {
+            $this->dataCheck($filter);
+        } catch (Exception $e) {
+            return $this->responseError($e->getMessage());
+        }
+
+        $key = "comment-list-" . $filter['city_id'] . "-" . $filter['limit'] . "-" . $filter['last_id'];
+
+        return cache_remember($key, 1, function () use ($filter) {
+            $comments = OfflineComment::filter($filter)
+                ->select('id', 'title', 'intro', 'bought_num', 'score', 'teacher_id')
+                ->limit($filter['limit'])
+                ->get();
+
+            $comments->transform(function ($comment) {
+                $teacher = $comment->teacher()->select('id', 'member_id')->first();
+                $member = $teacher->member()->first();
+                $comment->teacher_name = $member->name;
+                $comment->teacher_avatar = $member->avatar_url;
+
+                return $comment;
+            });
+
+            if ($comments) {
+                return $this->responseSuccess($comments);
+            } else {
+                return $this->responseError('未找到该地区相关课程');
+            }
+        });
+
+    }
+
+    /**
+     * @SWG\Get(
+     *   path="/reservation/comment/add",
+     *   summary="添加约课课程",
+     *   tags={"/reservation 约课"},
+     *   @SWG\Parameter(name="id", in="query", required=true, description="线下课程ID", type="string"),
+     *   @SWG\Response(
+     *     response=200,
+     *     description="查询成功"
+     *   ),
+     *   @SWG\Response(
+     *     response="404",
+     *     description="没有找到"
+     *   )
+     * )
+     */
+    public function add()
+    {
+        $input = Request::input();
+        try {
+            $member = \JWTAuth::parseToken()->authenticate();
+            if (!$member) {
+                return $this->responseError('无效的token,请重新登录', 401);
+            }
+        } catch (Exception $e) {
+            return $this->responseError($e->getMessage(), 401);
+        }
+
+        try {
+            $this->dataCheck($input);
+        } catch (Exception $e) {
+            return $this->responseError($e->getMessage());
+        }
+
+        $record = Record::find($input['id']);
+
+        if (empty($record)) {
+            return $this->responseError('未找到约课记录', 404);
+        }
+
+        $count = $record->comments()->where('member_id', $member->id)->count();
+        if ($count > 0) {
+            return $this->responseError('请勿重复评价');
+        }
+
+        $result = $record->comments()->create([
+            'member_id' => $member->id,
+            'course_id' => $record->course_id,
+            'teacher_id' => $record->teacher_id,
+            'content' => $input['content'],
+            'score' => $input['score'],
+        ]);
+
+        if ($result) {
+            return $this->responseSuccess($result);
+        } else {
+            return $this->responseFail('约课课程添加失败');
+        }
+    }
+
+}

@@ -1,0 +1,258 @@
+<?php
+
+Route::group(['prefix' => 'admin'], function () {
+    Route::get('login', 'AdminController@login');
+    Route::get('logout', 'Auth\LoginController@logout');
+    Route::post('login', 'Auth\LoginController@login');
+    Route::get('captcha', 'Auth\LoginController@captcha');
+});
+
+Route::group(['prefix' => 'admin', 'middleware' => 'auth.admin'], function () {
+
+    Route::get('/', 'AdminController@dashboard');
+    Route::get('/index', 'AdminController@dashboard');
+    Route::get('dashboard', 'AdminController@dashboard');
+    Route::get('hours', 'AdminController@hours');
+    Route::get('areas', 'AdminController@areas');
+    Route::get('browsers', 'AdminController@browsers');
+
+    /**
+     * 推送管理
+     */
+    Route::get('push/logs', 'PushController@log');
+    Route::get('push/logs/table', 'PushController@logTable');
+    Route::get('push/send', 'PushController@send');
+
+    /**
+     * 短信管理
+     */
+    Route::get('sms/logs', 'SmsController@log');
+    Route::get('sms/logs/table', 'SmsController@logTable');
+
+    /**
+     * 系统日志
+     */
+    Route::get('system/logs', 'AdminController@sysLog');
+    Route::get('system/logs/trees', 'AdminController@sysTree');
+    Route::get('system/logs/table', 'AdminController@sysTable');
+
+    /**
+     * 消息管理
+     */
+    Route::get('messages/table', 'MessageController@table');
+    Route::post('messages/state/{state}', 'MessageController@state');
+    Route::resource('messages', 'MessageController');
+    Route::get('messages/pass/{id}', 'MessageController@pass');
+    Route::get('messages/{id}/delete', 'MessageController@destroy');
+
+    /**
+     * 文件管理
+     */
+    Route::post('files/upload', 'FileController@upload');
+    Route::post('files/delete', 'FileController@delete');
+
+    /**
+     * 个人信息
+     */
+    Route::resource('profiles', 'ProfileController');
+
+    /**
+     * 后台用户管理
+     */
+    Route::post('users/category/{id}', 'UserController@category');
+    Route::get('users/tree/{id}', 'UserController@tree');
+    Route::post('users/grant/{id}', 'UserController@grant');
+    Route::get('users/table', 'UserController@table');
+    Route::get('users/logs', 'UserController@log');
+    Route::get('users/logs/table', 'UserController@logTable');
+    Route::get('users/{id}/delete', 'UserController@destroy');
+    Route::resource('users', 'UserController');
+
+    /**
+     * 会员管理
+     */
+    Route::get('members/table', 'MemberController@table');
+    Route::get('members/state/{id}', 'MemberController@state');
+    Route::get('members/sort', 'MemberController@sort');
+    Route::get('members/comments/{id}','MemberController@comments');
+    Route::get('members/wallet/{id}','MemberController@wallet');
+    Route::post('members/{id}/top', 'MemberController@top');
+    Route::post('members/{id}/tag', 'MemberController@tag');
+    Route::resource('members', 'MemberController');
+
+    /**
+     * 角色管理
+     */
+    Route::get('roles/table', 'RoleController@table');
+    Route::resource('roles', 'RoleController');
+    Route::get('roles/{id}/delete', 'RoleController@destroy');
+
+    /**
+     * 参数设置
+     */
+    Route::get('options/table', 'OptionController@table');
+    Route::get('options/{id}/save', 'OptionController@save');
+    Route::resource('options', 'OptionController');
+
+    /**
+     * 数据字典
+     */
+    Route::get('dictionaries/tree/', 'DictionaryController@tree');
+    Route::get('dictionaries/table/{parent_id}', 'DictionaryController@table');
+    Route::get('dictionaries/create/{parent_id}', 'DictionaryController@create');
+    Route::get('dictionaries/{id}/save', 'DictionaryController@save');
+    Route::resource('dictionaries', 'DictionaryController');
+    Route::get('dictionaries/{id}/delete', 'DictionaryController@destroy');
+
+    /**
+     * 版本管理
+     */
+    Route::get('apps/table', 'AppController@table');
+    Route::resource('apps', 'AppController');
+    Route::get('apps/{id}/delete', 'AppController@destroy');
+
+    /**
+     * 模块管理
+     */
+    Route::get('modules/table', 'ModuleController@table');
+    Route::get('modules/{id}/save', 'ModuleController@save');
+    Route::get('modules/{id}/migrate', 'ModuleController@migrate');
+    Route::get('modules/{id}/generate', 'ModuleController@generate');
+    Route::post('modules/copy', 'ModuleController@copy');
+    Route::resource('modules', 'ModuleController');
+
+    /**
+     * 字段管理
+     */
+    Route::get('modules/fields/{module_id}/table', 'ModuleFieldController@table');
+    Route::post('modules/fields/{module_id}/save', 'ModuleFieldController@save');
+    Route::resource('modules/fields', 'ModuleFieldController');
+
+    /**
+     * 菜单管理
+     */
+    Route::get('menus/modules', 'MenuController@modules');
+    Route::post('menus/sort', 'MenuController@sort');
+    Route::resource('menus', 'MenuController');
+
+    /**
+     * 主题管理
+     */
+    Route::get('themes/tree', 'ThemeController@tree');
+    Route::get('themes/file', 'ThemeController@readFile');
+    Route::post('themes/file', 'ThemeController@createFile');
+    Route::put('themes/file', 'ThemeController@writeFile');
+    Route::delete('themes/file', 'ThemeController@removeFile');
+    Route::get('themes/modules/{module_id}', 'ThemeController@module');
+    Route::resource('themes', 'ThemeController');
+
+    /**
+     * 分类管理
+     */
+    Route::get('categories/tree/', 'CategoryController@tree');
+    Route::get('categories/table/{category_id}', 'CategoryController@table');
+    Route::get('categories/create/{category_id}', 'CategoryController@create');
+    Route::get('categories/{id}/save', 'CategoryController@save');
+    Route::resource('categories', 'CategoryController');
+    Route::get('categories/{id}/delete', 'CategoryController@destroy');
+
+    /**
+     * 评论管理
+     */
+    Route::get('comments/table', 'CommentController@table');
+    Route::get('comments/replies/{id}', 'CommentController@replies');
+    Route::post('comments/{id}/reply', 'CommentController@reply');
+    Route::post('comments/state', 'CommentController@state');
+    Route::resource('comments', 'CommentController');
+    Route::get('comments/pass/{id}', 'CommentController@pass');
+    Route::get('comments/{id}/delete', 'CommentController@destroy');
+
+    /**
+     * 标签管理
+     */
+    Route::get('tags/table', 'TagController@table');
+    Route::get('tags/tree', 'TagController@tree');
+    Route::get('tags/sort', 'TagController@sort');
+    Route::resource('tags', 'TagController');
+
+    /**
+     * 课程管理
+     */
+    Route::get('courses/table', 'CourseController@table');
+    Route::post('courses/state', 'CourseController@state');
+    Route::get('courses/sort', 'CourseController@sort');
+    Route::post('courses/{id}/recommend', 'CourseController@recommend');
+    Route::get('courses/comments/{id}','CourseController@comments');
+    Route::get('courses/categories', 'CourseController@categories');
+    Route::post('courses/{id}/save', 'CourseController@save');
+    Route::resource('courses', 'CourseController');
+
+    /**
+     * 章节管理
+     */
+    Route::get('courses/{id}/manage', 'ChapterController@manage');
+    Route::post('courses/{id}/chapter', 'ChapterController@chapter');
+    Route::post('courses/{id}/section', 'ChapterController@section');
+    Route::post('chapters/{id}/sorts', 'ChapterController@sorts');
+    Route::resource('chapters', 'ChapterController');
+
+    /**
+     * 课时管理
+     */
+    Route::post('courses/{id}/lesson', 'LessonController@lesson');
+    Route::resource('lessons', 'LessonController');
+
+
+    /**
+     * 直播管理
+     */
+    Route::get('lives/enroll/{id}', 'LiveMemberController@index');
+    Route::get('lives/enrollments', 'LiveMemberController@table');
+
+    Route::get('lives/table', 'LiveController@table');
+    Route::post('lives/state', 'LiveController@state');
+    Route::get('lives/sort', 'LiveController@sort');
+    Route::get('lives/categories', 'LiveController@categories');
+    Route::post('lives/{id}/save', 'LiveController@save');
+    Route::post('lives/{id}/top', 'LiveController@top');
+    Route::post('lives/{id}/tag', 'LiveController@tag');
+    Route::resource('lives', 'LiveController');
+
+    /**
+     * 后台首页管理
+     */
+    Route::get('pics/table', 'PicController@table');
+    Route::post('pics/state', 'PicController@state');
+    Route::get('pics/sort', 'PicController@sort');
+    Route::get('pics/categories', 'PicController@categories');
+    Route::post('pics/{id}/save', 'PicController@save');
+    Route::resource('pics', 'PicController');
+
+    /**
+     * 活动管理
+     */
+    Route::get('activities/table', 'ActivityController@table');
+    Route::post('activities/state', 'ActivityController@state');
+    Route::get('activities/sort', 'ActivityController@sort');
+    Route::post('activities/{id}/save', 'ActivityController@save');
+    Route::resource('activities', 'ActivityController');
+
+
+    Route::get('orders/logs', 'AdminController@orderLog');
+    Route::get('orders/logs/table', 'AdminController@orderLogTable');
+    /**
+     * 订单管理
+     */
+    Route::get('orders/table', 'OrderController@table');
+    Route::post('orders/state', 'OrderController@state');
+    Route::get('orders/sort', 'OrderController@sort');
+    Route::post('orders/{id}/save', 'OrderController@save');
+    Route::resource('orders', 'OrderController');
+
+
+    /**
+     * 获取oss签名
+     */
+    Route::get('oss/signature', 'OssUploadController@signature');
+
+});

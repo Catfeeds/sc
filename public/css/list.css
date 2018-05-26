@@ -1,0 +1,104 @@
+.c-wrapper{
+    margin: 0 auto;
+    background: #eee;
+    padding-bottom: 180px;
+    width: 1080px;
+}
+.c-wrapper .category{
+    padding: 15px 30px;
+    background: #eee;
+    height: 220px;
+}
+.c-wrapper .category ul:first-child{
+    margin-bottom: 15px;
+    height: 100px;
+}
+.c-wrapper .category ul li{
+    float: left;
+    margin-right: 1%;
+    width: 24%;
+    height: 100px;
+    line-height: 100px;
+    text-align: center;
+    background: #fff;
+}
+.c-wrapper .category ul li.active{
+    background: #000;
+}
+.c-wrapper .category ul li.active a{
+    color: #fff;
+}
+.c-wrapper .category ul li a{
+    font-size: 40px;
+    color: #555;
+}
+.c-wrapper .category ul li:nth-child(4){
+    margin-right: 0;
+}
+.c-wrapper .products{
+    background: #fff;
+}
+.c-wrapper .products ul{
+    height: 756px;
+}
+.c-wrapper .products ul li{
+    margin-right: 10%;
+    height: 624px;
+    float: left;
+    color: #1b1b1b;
+    position: relative;
+    padding-top: 65px;
+}
+.c-wrapper .products ul li:first-child{
+    padding-left: 8.5%;
+}
+.c-wrapper .products ul li a img{
+    width: 100%;
+}
+.c-wrapper .products ul li:nth-child(2){
+    margin-right: 0;
+}
+.c-wrapper .products ul li .summary{
+    font-size: 25px;
+    height: 72px;
+    line-height: 72px;
+}
+.c-wrapper .products ul li h4{
+    font-size: 35px;
+}
+.c-wrapper .products ul li .price{
+    font-size: 35px;
+    position: absolute;
+    bottom: -6px;
+    right: 0;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

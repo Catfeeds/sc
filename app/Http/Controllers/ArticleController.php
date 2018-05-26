@@ -1,0 +1,131 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Events\UserLogEvent;
+use App\Models\Article;
+use App\Models\Category;
+use App\Models\UserLog;
+use Auth;
+use Gate;
+use Request;
+use Response;
+
+/**
+ * 文章
+ */
+class ArticleController extends Controller
+{
+    protected $base_url = '/admin/articles';
+    protected $view_path = 'admin.articles';
+
+    public function __construct()
+    {
+    }
+
+    public function index()
+    {
+        if (Gate::denies('@article')) {
+            return abort(403);
+        }
+
+        return view($this->view_path . '.index', ['base_url' => $this->base_url]);
+    }
+
+    public function create()
+    {
+        if (Gate::denies('@article-create')) {
+            \Session::flash('flash_warning', '无此操作权限');
+            return redirect()->back();
+        }
+
+        return view('admin.articles.create', ['base_url' => $this->base_url]);
+    }
+
+    public function edit($id)
+    {
+        if (Gate::denies('@article-edit')) {
+            \Session::flash('flash_warning', '无此操作权限');
+            return redirect()->back();
+        }
+
+        $article = Article::find($id);
+        $article->images = null;
+        $article->videos = null;
+        $article->audios = null;
+
+        return view('admin.articles.edit', ['content' => $article, 'base_url' => $this->base_url, 'back_url' => $this->base_url . '?category_id=' . $article->category_id]);
+    }
+
+    public function store()
+    {
+        $input = Request::all();
+        $input['user_id'] = Auth::user()->id;
+
+        $article = Article::stores($input);
+
+        event(new UserLogEvent(UserLog::ACTION_CREATE . '文章', $article->id, Article::MODEL_CLASS));
+
+        \Session::flash('flash_success', '添加成功');
+        return redirect($this->base_url . '?category_id=' . $article->category_id);
+    }
+
+    public function update($id)
+    {
+        $input = Request::all();
+
+        $article = Article::updates($id, $input);
+
+        event(new UserLogEvent(UserLog::ACTION_UPDATE . '文章', $article->id, Article::MODEL_CLASS));
+
+        \Session::flash('flash_success', '修改成功!');
+        return redirect($this->base_url . '?category_id=' . $article->category_id);
+    }
+
+    public function save($id)
+    {
+        $article = Article::find($id);
+
+        if (empty($article)) {
+            return;
+        }
+
+        $article->update(Request::all());
+    }
+
+    public function sort()
+    {
+        return Article::sort();
+    }
+
+    public function top($id)
+    {
+        $article = Article::find($id);
+        $article->top = !$article->top;
+        $article->save();
+    }
+
+    public function state()
+    {
+        $input = request()->all();
+        Article::state($input);
+
+        $ids = $input['ids'];
+        $stateName = Article::getStateName($input['state']);
+
+        //记录日志
+        foreach ($ids as $id) {
+            event(new UserLogEvent('变更' . '文章' . UserLog::ACTION_STATE . ':' . $stateName, $id, Article::MODEL_CLASS));
+        }
+    }
+
+    public function table()
+    {
+        return Article::table();
+    }
+
+    public function categories()
+    {
+        return Response::json(Category::tree('1', '0', '文章', false));
+    }
+}

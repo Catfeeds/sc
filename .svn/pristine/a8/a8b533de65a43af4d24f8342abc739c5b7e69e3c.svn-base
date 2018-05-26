@@ -1,0 +1,263 @@
+<?php
+
+namespace App\Api\Controllers;
+
+use App\Models\Record;
+use Exception;
+use Request;
+
+class RecordController extends BaseController
+{
+    /**
+     * @SWG\Get(
+     *   path="/reservation/record/lists",
+     *   summary="获取我的约课记录",
+     *   tags={"/reservation 约课"},
+     *   @SWG\Parameter(name="last_id", in="query", required=true, description="最后一条记录id", type="string"),
+     *   @SWG\Parameter(name="limit", in="query", required=true, description="分页大小", type="string"),
+     *   @SWG\Response(
+     *     response=200,
+     *     description="获取我的约课记录成功"
+     *   ),
+     *   @SWG\Response(
+     *     response="404",
+     *     description="没有找到路由"
+     *   )
+     * )
+     */
+    public function lists()
+    {
+        $filter['last_id'] = Request::get('last_id') ?: 0;
+        $filter['limit'] = Request::get('limit') ?: 20;
+
+        try {
+            $member = \JWTAuth::parseToken()->authenticate();
+            if (!$member) {
+                return $this->responseError('无效的token,请重新登录', 401);
+            }
+        } catch (Exception $e) {
+            return $this->responseError($e->getMessage(), 401);
+        }
+
+        try {
+            $this->dataCheck($filter);
+        } catch (Exception $e) {
+            return $this->responseError($e->getMessage());
+        }
+
+        $key = "record-list-" . $filter['limit'] . "-" . $member->id . "-" . $filter['last_id'];
+
+        return cache_remember($key, 1, function () use ($member, $filter) {
+            $records = $member->records()
+                ->filter($filter)
+                ->select('id', 'num', 'total_price', 'created_at', 'state', 'course_id', 'teacher_id')
+                ->limit($filter['limit'])
+                ->get();
+
+            $records->transform(function ($record) {
+                $record->course = $record->course()->select('id', 'title', 'charging_type', 'price')->first();
+                $teacher = $record->teacher()->first();
+                $record->teacher = $teacher->member()->first();
+                $record->teacher->avatar_url = get_file_url($record->teacher->avatar_url);
+                $record->getAttributes();
+
+                return $record;
+            });
+
+            if ($records) {
+                return $this->responseSuccess($records);
+            } else {
+                return $this->responseError('未找到约课记录');
+            }
+        });
+
+    }
+
+    /**
+     * @SWG\Get(
+     *   path="/reservation/record/accept",
+     *   summary="教师确认约课",
+     *   tags={"/reservation 约课"},
+     *   @SWG\Parameter(name="last_id", in="query", required=true, description="最后一条记录id", type="string"),
+     *   @SWG\Parameter(name="limit", in="query", required=true, description="分页大小", type="string"),
+     *   @SWG\Response(
+     *     response=200,
+     *     description="获取我的约课记录成功"
+     *   ),
+     *   @SWG\Response(
+     *     response="404",
+     *     description="没有找到路由"
+     *   )
+     * )
+     */
+    public function accept()
+    {
+        $data['id'] = Request::input('id');
+
+        try {
+            $member = \JWTAuth::parseToken()->authenticate();
+            if (!$member) {
+                return $this->responseError('无效的token,请重新登录', 401);
+            }
+        } catch (Exception $e) {
+            return $this->responseError($e->getMessage(), 401);
+        }
+
+        try {
+            $this->dataCheck($data);
+        } catch (Exception $e) {
+            return $this->responseError($e->getMessage());
+        }
+
+        $record = Record::find($data['id']);
+
+        if (empty($record)) {
+            return $this->responseError('未找到约课记录', 404);
+        }
+
+        $teacher = $member->teacher()->first();
+
+        if (empty($teacher)) {
+            return $this->responseError('您还不是老师，无权操作', 403);
+        }
+
+        //判断登录老师是否和课程老师一致？
+        if ($record->teacher_id !== $teacher->id) {
+            return $this->responseError('您无权操作此课程', 403);
+        }
+
+        if ($record->state !== Record::STATE_PAID) {
+            return $this->responseError('该约课记录状态非法，无法确认上课');
+        }
+
+        $input['state'] = Record::STATE_ACCEPTED;
+        $result = $record->update($input);
+
+        if ($result) {
+            return $this->responseSuccess();
+        }
+
+    }
+
+
+    /**
+     * @SWG\Post(
+     *   path="/reservation/record/confirm",
+     *   summary="学生确认上课",
+     *   tags={"/reservation 约课"},
+     *   @SWG\Parameter(name="last_id", in="query", required=true, description="最后一条记录id", type="string"),
+     *   @SWG\Parameter(name="limit", in="query", required=true, description="分页大小", type="string"),
+     *   @SWG\Response(
+     *     response=200,
+     *     description="获取我的约课记录成功"
+     *   ),
+     *   @SWG\Response(
+     *     response="404",
+     *     description="没有找到路由"
+     *   )
+     * )
+     */
+    public function confirm()
+    {
+        $data['id'] = Request::input('id');
+
+        try {
+            $member = \JWTAuth::parseToken()->authenticate();
+            if (!$member) {
+                return $this->responseError('无效的token,请重新登录', 401);
+            }
+        } catch (Exception $e) {
+            return $this->responseError($e->getMessage(), 401);
+        }
+
+        try {
+            $this->dataCheck($data);
+        } catch (Exception $e) {
+            return $this->responseError($e->getMessage());
+        }
+
+        $record = Record::find($data['id']);
+        if (empty($record)) {
+            return $this->responseError('未找到该约课记录', 404);
+        }
+
+        //判断登录学生是否和课程课程一致？
+        if ($record->member_id !== $member->id) {
+            return $this->responseError('您无权操作此课程', 403);
+        }
+
+        if ($record->state !== Record::STATE_ACCEPTED) {
+            return $this->responseError('该约课记录状态非法，无法确认上课');
+        }
+
+        $input['state'] = Record::STATE_CONFIRMED;
+        $result = $record->update($input);
+
+        if ($result) {
+            return $this->responseSuccess();
+        }
+
+    }
+
+
+    /**
+     * @SWG\Get(
+     *   path="/reservation/record/diff",
+     *   summary="补差价",
+     *   tags={"/reservation 约课"},
+     *   @SWG\Parameter(name="id", in="query", required=true, description="约课记录id", type="string"),
+     *   @SWG\Parameter(name="diff_price", in="query", required=true, description="差价价格", type="string"),
+     *   @SWG\Response(
+     *     response=200,
+     *     description="获取我的约课记录成功"
+     *   ),
+     *   @SWG\Response(
+     *     response="404",
+     *     description="没有找到路由"
+     *   )
+     * )
+     */
+    public function diff()
+    {
+        $input['id'] = Request::input('id');
+        $input['diff_price'] = Request::input('diff_price');
+
+        try {
+            $member = \JWTAuth::parseToken()->authenticate();
+            if (!$member) {
+                return $this->responseError('无效的token,请重新登录', 401);
+            }
+        } catch (Exception $e) {
+            return $this->responseError($e->getMessage(), 401);
+        }
+
+        try {
+            $this->dataCheck($input);
+        } catch (Exception $e) {
+            return $this->responseError('无效的token,请重新登录');
+        }
+
+        $record = Record::find($input['id']);
+
+        if (empty($record)) {
+            return $this->responseError('未找到该约课记录', 404);
+        }
+
+        if ($member->id !== $record->member_id) {
+            return $this->responseError('您无权操作此记录', 403);
+        }
+
+        if ($record->state !== Record::STATE_ACCEPTED) {
+            return $this->responseError('此记录不能进行补差价');
+        }
+
+        $input['state'] = Record::STATE_CONFIRMED;
+        $result = $record->update($input);
+
+        if ($result) {
+            return $this->responseSuccess();
+        }
+
+    }
+
+}

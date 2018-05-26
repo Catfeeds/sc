@@ -1,0 +1,159 @@
+<?php
+
+namespace App\Models;
+
+use Auth;
+use Cache;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
+
+class Member extends Authenticatable
+{
+    use Notifiable;
+    const ID_ADMIN = 1;
+    const SITE_ID = 1;
+
+    const REFER_TYPE = 'App\Models\Member';
+
+    const NO_CERTIFIED = 0;
+    const IS_CERTIFIED = 1;
+
+    const TYPE_TEACHER = 0;
+    const TYPE_PARENT = 1;
+
+    const CAPTCHA_REGISTER = 0;
+    const CAPTCHA_LOGIN = 1;
+    const CAPTCHA_RESET = 2;
+
+    const STATE_DISABLED = 0;
+    const STATE_ENABLED = 1;
+
+    const TYPES = [
+        0 => '老师',
+        1 => '家长',
+        2 => '少儿',
+        3 => '初中生',
+        4 => '高一学生',
+        5 => '高二学生',
+        6 => '高三学生',
+        7 => '大学生',
+    ];
+
+    protected $fillable = [
+        'name',
+        'password',
+        'nick_name',
+        'sex',
+        'mobile',
+        'avatar_url',
+        'salt',
+        'points',
+        'ip',
+        'token',
+        'im_token',
+        'type',
+        'source',
+        'uid',
+        'is_certified',
+        'vip_start',
+        'vip_end',
+        'state',
+        'signed_at',
+    ]; 
+
+    public function stateName()
+    {
+        switch ($this->state) {
+            case static::STATE_DISABLED:
+                return '已禁用';
+                break;
+            case static::STATE_ENABLED:
+                return '已启用';
+                break;
+        }
+    }
+
+    public function typeName()
+    {
+        return array_key_exists($this->type, static::TYPES) ? static::TYPES[$this->type] : '';
+    }
+
+    public function scopeFilter($query, $filters)
+    {
+        $query->where(function ($query) use ($filters) {
+            !empty($filters['id']) ? $query->where('id', $filters['id']) : '';
+            !empty($filters['type']) ? $query->where('type', $filters['type']) : '';
+            !empty($filters['name']) ? $query->where('name', 'like', '%' . $filters['username'] . '%') : '';
+            !empty($filters['mobile']) ? $query->where('mobile', $filters['mobile']) : '';
+            $filters['state'] != '' ? $query->where('state', $filters['state']) : '';
+            !empty($filters['start_date']) ? $query->where('created_at', '>=', $filters['start_date'])
+                ->where('created_at', '<=', $filters['end_date']) : '';
+        });
+    }
+
+    public function likes(){
+        return $this->hasMany(Like::class, 'member_id');
+    }
+
+    public function lives()
+    {
+        return $this->belongsToMany(Live::class)->withPivot('room_id')->withTimestamps();
+    }
+
+    public function teacher()
+    {
+        return $this->hasOne(Teacher::class, 'member_id');
+    }
+
+    public function certification()
+    {
+        return $this->hasOne(Certification::class);
+    }
+
+    public function courses()
+    {
+        return $this->belongsToMany(Course::class);
+    }
+
+    public function follows()
+    {
+        return $this->morphMany(Follow::class, 'refer');
+    }
+
+    public function favorites(){
+        return $this->hasMany(Favorite::class);
+    }
+
+    public function records()
+    {
+        return $this->hasMany(Record::class);
+    }
+
+    public function orders()
+    {
+        return $this->hasMany(Order::class);
+    }
+
+    public function detail()
+    {
+        return $this->hasOne(MemberDetail::class);
+    }
+
+    public static function verify($mobile, $captcha)
+    {
+        //比较验证码
+        $key = 'captcha_' . $mobile;
+        if (Cache::get($key) != $captcha) {
+            return false;
+        }else{
+            //移除验证码
+            Cache::forget($key);
+            return true;
+        }
+    }
+
+    public static function getMember()
+    {
+        return Auth::guard('web')->user();
+    }
+}

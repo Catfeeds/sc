@@ -1,0 +1,25 @@
+<?php
+
+namespace App\Models;
+
+use Auth;
+use Illuminate\Database\Eloquent\Model;
+
+class Like extends Model
+{
+    protected $fillable = [
+        'refer_id',
+        'refer_type',
+        'member_id',
+    ];
+
+    public function refer()
+    {
+        return $this->morphTo();
+    }
+
+    public function member()
+    {
+        return $this->belongsTo(Member::class, 'member_id');
+    }
+}

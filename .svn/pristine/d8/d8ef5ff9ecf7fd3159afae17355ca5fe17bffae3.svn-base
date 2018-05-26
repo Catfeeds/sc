@@ -1,0 +1,125 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Chapter;
+use App\Models\Course;
+use App\Models\Module;
+use Gate;
+use Request;
+use Auth;
+
+/**
+ * 章节
+ */
+class ChapterController extends Controller
+{
+    protected $base_url = '/admin/chapters';
+    protected $view_path = 'admin.chapters';
+    protected $module;
+
+    public function __construct()
+    {
+    }
+
+    public function manage($id)
+    {
+        if (Gate::denies('@course-edit')) {
+            \Session::flash('flash_warning', '无此操作权限');
+            return redirect()->back();
+        }
+
+        $chapterList = Chapter::getChapterList($id);
+        $course = Course::find($id);
+        return view('admin.courses.chapters', ['chapterList' => $chapterList, 'course_id' => $id, 'content' => $course, 'base_url' => $this->base_url, 'back_url' => $this->base_url . '?category_id=' . $course->category_id]);
+    }
+
+    public function chapter($id)
+    {
+        if (Gate::denies('@course-create')) {
+            \Session::flash('flash_warning', '无此操作权限');
+            return redirect()->back();
+        }
+
+        $sort = Chapter::where('course_id', $id)->orderBy('sort', 'desc')->first()['sort'];
+        $seq = Chapter::where('course_id', $id)->orderBy('seq', 'desc')->first()['seq'];
+
+        if (empty($sort)) {
+            $seq = 0;
+            $sort = 0;
+        }
+        $input = Request::input();
+        $input['user_id'] = Auth::user()->id;
+        $chapter = Chapter::create([
+            'state' => '9',
+            'title' => $input['title'],
+            'course_id' => $id,
+            'user_id' => $input['user_id'],
+            'sort' => $sort + 1,
+            'seq' => $seq + 1,
+
+        ]);
+        return redirect('/admin/courses/' . $id . '/manage');
+    }
+
+    public function section($id)
+    {
+        if (Gate::denies('@course-create')) {
+            \Session::flash('flash_warning', '无此操作权限');
+            return redirect()->back();
+        }
+
+        $chapter_id = Chapter::where('parent_id', '0')->orderBy('id', 'desc')->first()['id'];
+        $sort = Chapter::where('parent_id', $chapter_id)->orderBy('sort', 'desc')->first()['sort'];
+        $seq = Chapter::where('course_id', $id)->orderBy('seq', 'desc')->first()['seq'];
+
+        if (empty($sort)) {
+            $seq = 0;
+            $sort = 0;
+        }
+        $input = Request::input();
+        $input['user_id'] = Auth::user()->id;
+
+        $section = Chapter::create([
+            'state' => '9',
+            'title' => $input['title'],
+            'course_id' => $id,
+            'parent_id' => $chapter_id,
+            'user_id' => $input['user_id'],
+            'seq' => $seq + 1,
+            'sort' => $sort + 1,
+        ]);
+        return redirect('/admin/courses/' . $id . '/manage');
+    }
+
+    public function sorts($id)
+    {
+        $menus = Request::get('data');
+        $menus = json_decode(json_encode($menus));
+        Chapter::sorts($menus);
+    }
+
+    public function update($id)
+    {
+        $input = Request::all();
+        $chapter = Chapter::updates($id, $input);
+
+        \Session::flash('flash_success', '修改成功!');
+        return redirect('/admin/courses/' . $input['course_id'] . '/manage');
+    }
+
+    public function destroy($id)
+    {
+        $chapter = Chapter::find($id);
+
+        if ($chapter == null) {
+            \Session::flash('flash_warning', '无此记录');
+            return;
+        }
+
+        $chapter->lessons()->delete();
+        $chapter->delete();
+
+        \Session::flash('flash_success', '删除成功');
+    }
+}

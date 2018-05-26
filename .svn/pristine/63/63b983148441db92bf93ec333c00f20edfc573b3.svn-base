@@ -1,0 +1,82 @@
+<?php
+
+namespace App\Models;
+
+use Request;
+use Response;
+
+class OrderLog extends BaseModule
+{
+    const ACTION_CREATE = 'order_create';
+    const ACTION_PAID = 'order_paid';
+    const ACTION_CANCLE = 'order_cancle';
+    const EXCEPTION = 'order_exception';
+
+    const MSG_CREATE = '创建订单';
+    const MSG_PAID = '订单支付完成';
+    const MSG_CANCLE = '取消订单';
+
+    const MSG = [
+        'order_create' => '创建订单',
+        'order_paid' => '订单支付完成',
+        'order_cancle' => '取消订单',
+        'order_exception' => '订单异常',
+    ];
+
+    protected $fillable = [
+        'order_sn',
+        'action',
+        'message',
+        'data',
+        'member_id',
+        'ip'
+    ];
+
+    protected $dates = ['created_at', 'updated_at'];
+
+    public static function record($order_sn, $action, $data, $msg = '')
+    {
+        static::create([
+            'order_sn' => $order_sn,
+            'action' => $action,
+            'message' => empty($msg) ? static::MSG[$action] : $msg,
+            'data' => json_encode($data),
+            'member_id' => $data->member_id,
+            'ip' => get_client_ip(),
+        ]);
+    }
+
+    public static function table()
+    {
+        $filters = Request::all();
+
+        $offset = Request::get('offset') ? Request::get('offset') : 0;
+        $limit = Request::get('limit') ? Request::get('limit') : 20;
+
+        $ds = new DataSource();
+        $logs = static::filter($filters)
+            ->skip($offset)
+            ->limit($limit)
+            ->get();
+
+        $ds->total = static::filter($filters)
+            ->count();
+
+        $logs->transform(function ($log) {
+
+            $attributes = $log->getAttributes();
+
+            //日期类型
+            foreach ($log->dates as $date) {
+                $attributes[$date] = empty($log->$date) ? '' : $log->$date->toDateTimeString();
+            }
+
+            $attributes['state_name'] = $log->stateName();
+            return $attributes;
+        });
+
+        $ds->rows = $logs;
+
+        return Response::json($ds);
+    }
+}

@@ -1,0 +1,43 @@
+<?php
+
+namespace App\Models;
+
+
+class Coupon extends BaseModule
+{
+    const MODEL_CLASS = 'App\Models\Coupon';
+
+    const REFER_TYPES = [
+        'App\Models\Course' => '课程',
+        'App\Models\Live' => '直播',
+        'App\Models\OfflineCourse' => '线下课程',
+    ];
+
+    const TYPES = [
+        0 => '打折',
+        1 => '抵扣',
+    ];
+
+    const STATES = [
+        0 => '未使用',
+        1 => '已使用',
+        2 => '失效',
+    ];
+
+    protected $fillable = [
+        'refer_id',
+        'refer_type',
+        'code',
+        'type',
+        'discount',
+        'batch_id',
+        'order_id',
+        'member_id',
+        'state',
+        'use_at',
+        'deadline',
+        'received_at',
+    ];
+
+
+}

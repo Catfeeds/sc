@@ -1,0 +1,202 @@
+<!-- Left side column. contains the logo and sidebar -->
+<aside class="main-sidebar">
+    <!-- sidebar: style can be found in sidebar.less -->
+    <section class="sidebar">
+        <!-- sidebar menu: : style can be found in sidebar.less -->
+        <ul class="sidebar-menu">
+            <li class="header">菜单导航</li>
+            
+
+            <li class="treeview">
+                <a href="#">
+                    <i class="fa fa-edit"></i>
+                    <span class="menu-item-top">内容管理</span>
+                    <i class="fa fa-angle-left pull-right"></i>
+                </a>
+                <ul class="treeview-menu">
+                    <li>
+                        <a href="/admin/galleries">
+                            <i class="fa fa-image"></i>
+                            <span class="menu-item-top">图集管理</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/admin/articles">
+                            <i class="fa fa-file-o"></i>
+                            <span class="menu-item-top">文章管理</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/admin/activities">
+                            <i class="fa fa-calendar-check-o"></i>
+                            <span class="menu-item-top">活动管理</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/admin/courses">
+                            <i class="fa fa-book"></i>
+                            <span class="menu-item-top">课程管理</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/admin/lives">
+                            <i class="fa fa-bullhorn"></i>
+                            <span class="menu-item-top">直播管理</span>
+                        </a>
+                    </li>
+                    <li class="">
+                        <a href="/admin/pics">
+                            <i class="fa fa-university"></i>
+                            <span class="menu-item-top">首页管理</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/admin/tags">
+                            <i class="fa fa-cube"></i>
+                            <span class="menu-item-top">标签管理</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/admin/coupons">
+                            <i class="fa fa-cny"></i>
+                            <span class="menu-item-top">优惠管理</span>
+                        </a>
+                    </li>
+                </ul>
+            </li>
+            <li class="treeview">
+                <a href="#">
+                    <i class="fa fa-balance-scale"></i>
+                    <span class="menu-item-top">订单管理</span>
+                    <i class="fa fa-angle-left pull-right"></i>
+                </a>
+                <ul class="treeview-menu">
+                    <li>
+                        <a href="/admin/orders">
+                            <i class="fa fa-balance-scale"></i>
+                            <span class="menu-item-top">订单管理</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/admin/orders/logs">
+                            <i class="fa fa-history"></i>
+                            <span class="menu-item-top">订单日志</span>
+                        </a>
+                    </li>
+                </ul>
+            </li>
+            <li class="treeview">
+                <a href="#">
+                    <i class="fa fa-user"></i>
+                    <span class="menu-item-top">会员管理</span>
+                    <i class="fa fa-angle-left pull-right"></i>
+                </a>
+                <ul class="treeview-menu">
+                    <li>
+                        <a href="/admin/members">
+                            <i class="fa fa-user-o"></i>
+                            <span class="menu-item-top">会员管理</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/admin/members/certify">
+                            <i class="fa fa-user-md"></i>
+                            <span class="menu-item-top">认证管理</span>
+                        </a>
+                    </li>
+                </ul>
+            </li>
+            <li class="treeview">
+                <a href="#">
+                    <i class="fa fa-calendar"></i>
+                    <span class="menu-item-top">日志查询</span>
+                    <i class="fa fa-angle-left pull-right"></i>
+                </a>
+                <ul class="treeview-menu">
+                    <li>
+                        <a href="/admin/users/logs">
+                            <i class="fa fa-user-o"></i>
+                            <span class="menu-item-top">操作日志</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/admin/push/logs">
+                            <i class="fa fa-envelope-o"></i>
+                            <span class="menu-item-top">推送日志</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/admin/sms/logs">
+                            <i class="fa fa-commenting-o"></i>
+                            <span class="menu-item-top">短信日志</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/admin/system/logs">
+                            <i class="fa fa-envelope"></i>
+                            <span class="menu-item-top">系统日志</span>
+                        </a>
+                    </li>
+                </ul>
+            </li>
+            <li class="treeview">
+                <a href="#">
+                    <i class="fa fa-sitemap"></i>
+                    <span class="menu-item-top">站点管理</span>
+                    <i class="fa fa-angle-left pull-right"></i>
+                </a>
+                <ul class="treeview-menu">
+                    <?php if (app('Illuminate\Contracts\Auth\Access\Gate')->check('@theme')): ?>
+                        <li><a href="/admin/themes"><i class="fa fa-paint-brush"></i> 主题管理</a></li>
+                    <?php endif; ?>
+                    <?php if (app('Illuminate\Contracts\Auth\Access\Gate')->check('@category')): ?>
+                        <li><a href="/admin/categories"><i class="fa fa-columns"></i> 分类管理</a></li>
+                    <?php endif; ?>
+                </ul>
+            </li>
+            <li class="treeview">
+                <a href="#">
+                    <i class="fa fa-cog"></i>
+                    <span class="menu-item-top">系统管理</span>
+                    <i class="fa fa-angle-left pull-right"></i>
+                </a>
+                <ul class="treeview-menu">
+                    <?php if (app('Illuminate\Contracts\Auth\Access\Gate')->check('@option')): ?>
+                        <li><a href="/admin/options"><i class="fa fa-cog"></i> 系统设置</a></li>
+                    <?php endif; ?>
+                    <?php if (app('Illuminate\Contracts\Auth\Access\Gate')->check('@dictionary')): ?>
+                        <li><a href="/admin/dictionaries"><i class="fa fa-book"></i> 字典设置</a></li>
+                    <?php endif; ?>
+                    <?php if (app('Illuminate\Contracts\Auth\Access\Gate')->check('@app')): ?>
+                        <li><a href="/admin/apps"><i class="fa fa-android"></i> 版本管理</a></li>
+                    <?php endif; ?>
+                    <?php if (app('Illuminate\Contracts\Auth\Access\Gate')->check('@module')): ?>
+                        <li><a href="/admin/modules"><i class="fa fa-cubes"></i> 模块管理</a></li>
+                    <?php endif; ?>
+                    <?php if (app('Illuminate\Contracts\Auth\Access\Gate')->check('@menu')): ?>
+                        <li><a href="/admin/menus"><i class="fa fa-bars"></i> 菜单管理</a></li>
+                    <?php endif; ?>
+                    <?php if (app('Illuminate\Contracts\Auth\Access\Gate')->check('@role')): ?>
+                        <li><a href="/admin/roles"><i class="fa fa-street-view"></i> 角色管理</a></li>
+                    <?php endif; ?>
+                    <?php if (app('Illuminate\Contracts\Auth\Access\Gate')->check('@user')): ?>
+                        <li><a href="/admin/users"><i class="fa fa-user"></i> 用户管理</a></li>
+                    <?php endif; ?>
+                </ul>
+            </li>
+        </ul>
+    </section>
+    <!-- /.sidebar -->
+</aside>
+
+<script>
+    $(document).ready(function () {
+        var url = window.location.pathname;
+        url = url.replace(/\/[0-9]*\/edit/, ''); // articles/1/edit
+        url = url.replace(/\b\/create[\/0-9]*\b/, ''); // categories/create/1
+        url = url.replace(/\b\/create\?[\s\S]*\b/, ''); // articles/create?category_id=1
+        $('ul.treeview-menu>li').find('a[href="' + url + '"]').closest('li').addClass('active');  //二级链接高亮
+        $('ul.treeview-menu>li').find('a[href="' + url + '"]').closest('li.treeview').addClass('active');  //一级链接高亮
+        $('ul.treeview-menu>li').find('a[href="' + url + '"]').parent().addClass('active'); //单独一级高亮
+    });
+</script>

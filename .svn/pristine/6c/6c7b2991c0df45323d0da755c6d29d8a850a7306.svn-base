@@ -1,0 +1,105 @@
+<?php
+
+namespace App\Models;
+
+use Request;
+use Response;
+
+class Certification extends BaseModule
+{
+    const STATE_CERTIFING = 0;
+    const STATE_SUCCESS = 1;
+    const STATE_FAILURE = 2;
+
+    const STATES = [
+        0 => '待审核',
+        1 => '审核通过',
+        2 => '拒绝认证',
+    ];
+
+    protected $fillable = [
+        'member_id',
+        'name',
+        'avatar_url',
+        'title',
+        'degree',
+        'id_card',
+        'card_photo',
+        'reason',
+        'user_id',
+        'state'
+    ];
+
+    protected $dates = ['created_at', 'updated_at'];
+
+    public function member()
+    {
+        return $this->belongsTo(Member::class);
+    }
+
+    public function scopeFilter($query, $filters)
+    {
+        $query->where(function ($query) use ($filters) {
+            empty($filters['id']) ?: $query->where('id', $filters['id']);
+            empty($filters['name']) ?: $query->where('name', $filters['name']);
+            empty($filters['start_date']) ?: $query->where('created_at', '>=', $filters['start_date']);
+            empty($filters['end_date']) ?: $query->where('created_at', '<=', $filters['end_date']);
+            empty($filters['member_name']) ?: $query->whereHas('member', function ($query) use ($filters) {
+                $query->where('nick_name', $filters['member_name']);
+            });
+            empty($filters['member_id']) ?: $query->whereHas('member', function ($query) use ($filters) {
+                $query->where('id', $filters['member_id']);
+            });
+        });
+
+        if (isset($filters['state'])) {
+            if (!empty($filters['state']) || $filters['state'] === strval(static::STATE_DELETED)) {
+                $query->where('state', $filters['state']);
+            }
+        }
+    }
+
+    public static function table()
+    {
+        $filters = Request::all();
+
+        $offset = Request::get('offset') ? Request::get('offset') : 0;
+        $limit = Request::get('limit') ? Request::get('limit') : 20;
+
+        $ds = new DataSource();
+        $certifications = static::with('member', 'user')
+            ->filter($filters)
+            ->skip($offset)
+            ->limit($limit)
+            ->get();
+
+        $ds->total = static::filter($filters)
+            ->count();
+
+        $certifications->transform(function ($certification) {
+
+            $certification->card_photo = get_file_url($certification->card_photo);
+            $certification->card_photo_thumb = get_file_url($certification->card_photo) . '/thumbnail';
+            $certification->mobile = $certification->member->mobile;
+
+            $certification->user_name = '';
+            if ($certification->user) {
+                $certification->user_name = $certification->user->name;
+            }
+
+            $attributes = $certification->getAttributes();
+
+            //日期类型
+            foreach ($certification->dates as $date) {
+                $attributes[$date] = empty($certification->$date) ? '' : $certification->$date->toDateTimeString();
+            }
+
+            $attributes['state_name'] = $certification->stateName();
+            return $attributes;
+        });
+
+        $ds->rows = $certifications;
+
+        return Response::json($ds);
+    }
+}

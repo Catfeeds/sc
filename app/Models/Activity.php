@@ -1,0 +1,190 @@
+<?php
+
+namespace App\Models;
+
+use Exception;
+use Request;
+use Response;
+use Carbon\Carbon;
+
+
+class Activity extends BaseModule
+{
+    const STATE_DELETED = 0;
+    const STATE_NORMAL = 1;
+    const STATE_CANCELED = 2;
+    const STATE_PUBLISHED = 9;
+
+    const STATES = [
+        0 => '已删除',
+        1 => '未发布',
+        2 => '已撤回',
+        9 => '已发布',
+    ];
+
+    const STATUS = [
+        0 => '未开始',
+        1 => '进行中',
+        2 => '已结束',
+    ];
+
+    const STATUS_COMMING = 0;
+    const STATUS_ONGING = 1;
+    const STATUS_END = 2;
+
+    const MODEL_CLASS = 'App\Models\Activity';
+
+    const STATE_PERMISSIONS = [
+        0 => '@article-delete',
+        2 => '@article-cancel',
+        9 => '@article-publish',
+    ];
+
+    protected $table = 'activities';
+
+    protected $fillable = ['title', 'cover_url', 'web_url', 'content', 'start_at', 'end_at', 'user_id', 'sort', 'state', 'published_at'];
+
+    protected $dates = ['published_at', 'start_at', 'end_at'];
+
+    protected $entities = ['member_id', 'user_id'];
+
+
+    public function member()
+    {
+        return $this->belongsTo(Member::class);
+    }
+
+    public static function stores($input)
+    {
+        $input['state'] = static::STATE_NORMAL;
+
+        $activity = static::create($input);
+
+        return $activity;
+    }
+
+    public static function updates($id, $input)
+    {
+        $activity = static::find($id);
+
+        $activity->update($input);
+
+        return $activity;
+    }
+
+    public static function table()
+    {
+        $filters = Request::all();
+
+        $offset = Request::get('offset') ? Request::get('offset') : 0;
+        $limit = Request::get('limit') ? Request::get('limit') : 20;
+
+        $ds = new DataSource();
+        $activities = static::with('member', 'user')
+            ->filter($filters)
+            ->orderBy('sort', 'desc')
+            ->skip($offset)
+            ->limit($limit)
+            ->get();
+
+        $ds->total = static::filter($filters)
+            ->count();
+
+        $activities->transform(function ($activity) {
+            $attributes = $activity->getAttributes();
+
+            //实体类型
+            foreach ($activity->entities as $entity) {
+                $entity_map = str_replace('_id', '_name', $entity);
+                $entity = str_replace('_id', '', $entity);
+                $attributes[$entity_map] = empty($activity->$entity) ? '' : $activity->$entity->name;
+            }
+
+            //日期类型
+            foreach ($activity->dates as $date) {
+                $attributes[$date] = empty($activity->$date) ? '' : $activity->$date->toDateTimeString();
+            }
+
+            $attributes['state_name'] = $activity->stateName();
+            $attributes['created_at'] = empty($activity->created_at) ? '' : $activity->created_at->toDateTimeString();
+            $attributes['updated_at'] = empty($activity->updated_at) ? '' : $activity->updated_at->toDateTimeString();
+
+            $now = Carbon::now();
+            if ($activity->start_at > $now) {
+                $attributes['status'] = Activity::STATUS['0'];
+            } elseif ($activity->start_at < $now && $activity->end_at > $now) {
+                $attributes['status'] = Activity::STATUS['1'];
+            } elseif ($activity->end_at < $now) {
+                $attributes['status'] = Activity::STATUS['2'];
+            }
+
+            return $attributes;
+        });
+
+        $ds->rows = $activities;
+        return Response::json($ds);
+    }
+
+    /**
+     * 排序
+     */
+    public static function sort()
+    {
+        $select_id = request('select_id');
+        $place_id = request('place_id');
+        $move_down = request('move_down');
+
+        $select = self::find($select_id);
+        $place = self::find($place_id);
+
+        if (empty($select) || empty($place)) {
+            return Response::json([
+                'status_code' => 404,
+                'message' => 'ID不存在',
+            ]);
+        }
+
+        if ($select->top && !$place->top) {
+            return Response::json([
+                'status_code' => 404,
+                'message' => '置顶记录不允许移至普通位置',
+            ]);
+        }
+
+        if (!$select->top && $place->top) {
+            return Response::json([
+                'status_code' => 404,
+                'message' => '普通记录不允许移至置顶位置',
+            ]);
+        }
+
+        $sort = $place->sort;
+        try {
+            if ($move_down) {
+                //下移
+                //增加移动区间的排序值
+                self::where('sort', '>=', $place->sort)
+                    ->where('sort', '<', $select->sort)
+                    ->increment('sort');
+            } else {
+                //上移
+                //减少移动区间的排序值
+                self::where('sort', '>', $select->sort)
+                    ->where('sort', '<=', $place->sort)
+                    ->decrement('sort');
+            }
+        } catch (Exception $e) {
+            return Response::json([
+                'status_code' => 500,
+                'message' => $e->getMessage(),
+            ]);
+        }
+        $select->sort = $sort;
+        $select->save();
+
+        return Response::json([
+            'status_code' => 200,
+            'message' => 'success',
+        ]);
+    }
+}

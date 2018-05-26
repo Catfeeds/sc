@@ -1,0 +1,90 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Chapter;
+use App\Models\Course;
+use App\Models\Lesson;
+use Gate;
+use Request;
+use Auth;
+
+
+/**
+ * 课时
+ */
+class LessonController extends Controller
+{
+    protected $base_url = '/admin/lessons';
+    protected $view_path = 'admin.lessons';
+
+    public function __construct()
+    {
+
+    }
+
+    //添加课时
+    public function lesson($id)
+    {
+        if (Gate::denies('@course-create')) {
+            \Session::flash('flash_warning', '无此操作权限');
+            return redirect()->back();
+        }
+        $chapter_id = Chapter::where('parent_id', 0)->orderBy('id', 'desc')->first()['id'];
+        $sort = Lesson::where('chapter_id', $chapter_id)->orderBy('sort', 'desc')->first()['sort'];
+        $seq = Lesson::where('chapter_id', $chapter_id)->orderBy('seq', 'desc')->first()['seq'];
+
+        if (empty($seq)) {
+            $seq = 0;
+            $sort = 0;
+        }
+
+        $course = Course::find($id)->increment('lesson_num');
+
+        $input = Request::input();
+        $input['user_id'] = Auth::user()->id;
+        $lesson = Lesson::create([
+            'state' => '9',
+            'title' => $input['title'],
+            'duration' => $input['duration'] * 60,
+            'type' => $input['type'],
+            'intro' => $input['intro'],
+            'content' => $input['content'],
+            'free' => $input['free'],
+            'media_url' => $input['media_url'],
+            'chapter_id' => $chapter_id,
+            'user_id' => $input['user_id'],
+            'sort' => $sort + 1,
+            'seq' => $seq + 1,
+        ]);
+
+        return redirect('/admin/courses/' . $id . '/manage');
+    }
+
+    public function update($id)
+    {
+        $input = Request::all();
+        $lesson = Lesson::updates($id, $input);
+
+        \Session::flash('flash_success', '修改成功!');
+        return redirect('/admin/courses/' . $input['course_id'] . '/manage');
+    }
+
+    public function destroy($id)
+    {
+        $lesson = Lesson::find($id);
+
+        if ($lesson == null) {
+            \Session::flash('flash_warning', '无此记录');
+            return;
+        }
+
+        $course = Course::find($id);
+        $course->decrement('lesson_num');
+
+        $lesson->delete();
+
+        \Session::flash('flash_success', '删除成功');
+    }
+
+}

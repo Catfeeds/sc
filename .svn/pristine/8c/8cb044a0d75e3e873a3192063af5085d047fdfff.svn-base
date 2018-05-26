@@ -1,0 +1,21 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Order;
+use Request;
+use Response;
+
+class OrderController extends Controller
+{
+    public function aliNotify()
+    {
+
+    }
+
+    public function wxNotify()
+    {
+
+    }
+
+}

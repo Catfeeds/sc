@@ -1,0 +1,33 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Certification;
+use Request;
+
+class CertificationController extends BaseController
+{
+    public function __construct()
+    {
+    }
+
+    public function index()
+    {
+        return view('admin.members.certify');
+    }
+
+    public function state()
+    {
+        $id = Request::input('id');
+        $state = Request::input('state');
+        $certification = Certification::find($id);
+
+        $certification->state = $state;
+        $certification->save();
+    }
+
+    public function table()
+    {
+        return Certification::table();
+    }
+}

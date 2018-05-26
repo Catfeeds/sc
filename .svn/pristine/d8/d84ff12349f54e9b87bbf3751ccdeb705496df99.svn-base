@@ -1,0 +1,156 @@
+<?php
+
+namespace App\Api\Controllers;
+
+use App\Models\Live;
+use App\Models\Course;
+use App\Models\Pic;
+
+
+class HomeController extends BaseController
+{
+    public function transform($index)
+    {
+        $index->image = get_file_url($index->image);
+        $attributes = $index->getAttributes();
+
+        $attributes['created_at'] = empty($index->created_at) ? '' : $index->created_at->toDateTimeString();
+        $attributes['updated_at'] = empty($index->updated_at) ? '' : $index->updated_at->toDateTimeString();
+        unset($attributes['id']);
+
+        return $attributes;
+    }
+
+    /**
+     * @SWG\Get(
+     *   path="/index",
+     *   summary="获取首页列表",
+     *   tags={"/comment 通用"},
+     *   @SWG\Response(
+     *     response=200,
+     *     description="查询成功"
+     *   ),
+     *   @SWG\Response(
+     *     response="404",
+     *     description="没有找到"
+     *   )
+     * )
+     */
+    public function index()
+    {
+        $key = "index-list";
+        return cache_remember($key, 1, function () {
+            $banners = Pic::where('type', Pic::TYPE_BANNER)->get();
+            $banners->transform(function ($banner) {
+                $banner->banner_id = $banner->id;
+                $banner->name = '';
+                return $this->transform($banner);
+            });
+
+            //查询置顶直播
+            $live = Live::where('is_top', Live::IS_TOP)->first();
+            if ($live) {
+                $live->live_id = $live->id;
+                $live->cover_url = get_file_url($live->cover_url);
+                $live->poster_url = get_file_url($live->poster_url);
+                $live->stream_url = get_file_url($live->stream_url);
+
+
+                $member = null;
+                if (\JWTAuth::getToken()) {
+                    try {
+                        $member = \JWTAuth::parseToken()->authenticate();
+                    } catch (\Exception $e) {
+                    }
+                }
+                if ($member) {
+                    $liveMember = $live->members()->where('member_id', $member->id)->first();
+
+                    $live->is_bought = empty($liveMember) ? 0 : 1;
+                    $live->room_id = empty($liveMember->pivot->room_id) ? 0 : $liveMember->pivot->room_id;
+                } else {
+                    $live->is_bought = 0;
+                    $live->room_id = 0;
+                }
+
+                $live = $live->getAttributes();
+                unset($live['id']);
+            }
+            //查询推荐课程
+
+            $recommends = Course::where('recommended', Course::IS_RECOMMENDED)
+                ->orderBy('recommended', 'desc')
+                ->orderBy('sort', 'desc')
+                ->orderBy('id', 'desc')
+                ->get();
+            $recommends->transform(function ($course) {
+                return $this->courseTransform($course);
+            });
+            //查询免费课程
+            $free_courses = Course::where('is_free', Course::IS_FREE)
+                ->orderBy('sort', 'desc')
+                ->orderBy('id', 'desc')
+                ->get();
+
+            $free_courses->transform(function ($course) {
+                return $this->courseTransform($course);
+            });
+
+            $data['banner'] = $banners;
+            $data['live'] = $live;
+            $data['course'] = $recommends;
+            $data['free_course'] = $free_courses;
+
+            return $this->responseSuccess($data);
+        });
+
+    }
+
+    public function courseTransform($course)
+    {
+        $course->course_id = $course->id;
+        $course->cover_url = get_file_url($course->cover_url);
+        $res = strpos($course->poster_url, '|');
+        if ($res) {
+            $poster_url = explode('|', $course->poster_url);
+            $poster['url'] = get_file_url($poster_url[0]);
+            $poster['w'] = $poster_url[2];
+            $poster['h'] = $poster_url[3];
+            $course->poster = $poster;
+        } else {
+            $poster['url'] = get_file_url($course->poster_url);
+            $poster['w'] = 0;
+            $poster['h'] = 0;
+            $course->poster = $poster;
+        }
+        $teacher = $course->member()->select('name', 'title')->first();
+        $teacher->title = empty($teacher->title) ? '' : $teacher->title;
+        $course->teacher = $teacher;
+        //获取当前登陆用户
+        $member = null;
+        if (\JWTAuth::getToken()) {
+            try {
+                $member = \JWTAuth::parseToken()->authenticate();
+            } catch (\Exception $e) {
+
+            }
+        }
+        if ($member) {
+            $course->is_bought = in_array($course->id, $member->courses()->pluck('course_id')->toArray()) ? 1 : 0;
+            $course->is_collected = in_array($course->id, $member->favorites()->pluck('refer_id')->toArray()) ? 1 : 0;
+        } else {
+            $course->is_bought = 0;
+            $course->is_collected = 0;
+        }
+
+        $attributes = $course->getAttributes();
+        unset($attributes['id']);
+        unset($attributes['poster_url']);
+        unset($attributes['member_id']);
+
+        $attributes['created_at'] = empty($course->created_at) ? '' : $course->created_at->toDateTimeString();
+        $attributes['updated_at'] = empty($course->updated_at) ? '' : $course->updated_at->toDateTimeString();
+
+        return $attributes;
+    }
+}

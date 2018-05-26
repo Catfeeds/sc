@@ -1,0 +1,132 @@
+<?php
+
+namespace App\Models;
+
+use Request;
+use Response;
+
+class Order extends BaseModule
+{
+    const STATE_NOPAY = 0;
+    const STATE_PAID = 1;
+
+    const ORDER_EXPIRED_TIME = 86400;
+
+    const STATES = [
+        0 => '未付款',
+        1 => '已购买',
+    ];
+
+    const TYPES = ['course', 'live', 'reservation'];
+    const REFER_TYPES = [
+        'App\Models\Course' => '课程',
+        'App\Models\Live' => '直播',
+        'App\Models\OfflineCourse' => '线下约课'
+    ];
+    const PAYMENTS = ['alipay', 'wxpay'];
+
+    const STATE_PERMISSIONS = [
+        0 => '@order-delete',
+    ];
+
+    protected $fillable = ['order_sn', 'member_id', 'amount', 'coupon', 'coupon_discount', 'payment', 'buyer_id', 'pay_sn', 'state', 'paid_at'];
+
+    protected $dates = ['paid_at', 'created_at', 'updated_at'];
+
+    public function carts()
+    {
+        return $this->hasMany(Cart::class);
+    }
+
+    public function scopeFilter($query, $filters)
+    {
+        $filters['order'] = empty($filters['order']) ? '<' : '>';
+
+        $query->where(function ($query) use ($filters) {
+            empty($filters['id']) ?: $query->where('id', $filters['id']);
+            empty($filters['last_id']) ?: $query->where('id', $filters['order'], $filters['last_id']);
+            empty($filters['start_date']) ?: $query->where('created_at', '>=', $filters['start_date']);
+            empty($filters['end_date']) ?: $query->where('created_at', '<=', $filters['end_date']);
+            empty($filters['member_name']) ?: $query->whereHas('member', function ($query) use ($filters) {
+                $query->where('nick_name', $filters['member_name']);
+            });
+        });
+
+        if (isset($filters['state'])) {
+            if (!empty($filters['state']) || $filters['state'] === strval(static::STATE_DELETED)) {
+                $query->where('state', $filters['state']);
+            }
+        }
+    }
+
+    public static function buildOrderSn()
+    {
+        //生成流水号并保存至$file文件中
+        $file = "order/order.txt";
+        if (!file_exists($file)) {
+            if ($handle = fopen($file, "a+")) {
+                $textTime = date("mdY");
+                $num_order_new = str_pad($textTime, 9, '0', STR_PAD_RIGHT);
+                fwrite($handle, $num_order_new);
+                $content = $num_order_new;
+                fclose($handle);
+            } else {
+                return false;
+            }
+        } else {
+            if ($handle = fopen($file, "r+")) {
+                $content = file_get_contents($file);
+                $new = $content + 1;
+                if (!fwrite($handle, $new)) {
+                    return false;
+                }
+                fclose($handle);
+            }
+        }
+        return 'o' . $content . rand(100, 999);
+
+    }
+
+    public static function table()
+    {
+        $filters = Request::all();
+
+        $offset = Request::get('offset') ? Request::get('offset') : 0;
+        $limit = Request::get('limit') ? Request::get('limit') : 20;
+
+        $ds = new DataSource();
+        $orders = static::filter($filters)
+            ->skip($offset)
+            ->limit($limit)
+            ->get();
+
+        $ds->total = static::filter($filters)
+            ->count();
+
+        $orders->transform(function ($order) {
+            $order->price = $order->price / 100;
+            $cart = $order->carts()->first();
+            $member = $cart->member()->first();
+            $order->goods_id = $cart->refer_id;
+            $order->type = static::REFER_TYPES[$cart->refer_type];
+            $order->name = $cart->name;
+            $order->mobile = $member->mobile;
+            $order->nick_name = $member->nick_name;
+
+            $attributes = $order->getAttributes();
+
+            //日期类型
+            foreach ($order->dates as $date) {
+                $attributes[$date] = empty($order->$date) ? '' : $order->$date->toDateTimeString();
+            }
+
+            $attributes['state_name'] = $order->stateName();
+            return $attributes;
+        });
+
+        $ds->rows = $orders;
+
+        return Response::json($ds);
+    }
+
+}

@@ -1,0 +1,222 @@
+<?php
+
+namespace App\Models;
+
+use Exception;
+use Request;
+use Response;
+
+class Image extends BaseModule
+{
+    const STATE_DELETED = 0;
+    const STATE_NORMAL = 1;
+    const STATE_CANCELED = 2;
+    const STATE_PUBLISHED = 9;
+
+    const TYPE_COVER = 1;
+
+    const STATES = [
+        0 => '已删除',
+        1 => '未发布',
+        2 => '已撤回',
+        9 => '已发布',
+    ];
+
+    const MODEL_CLASS = 'App\Models\Image';
+
+    const STATE_PERMISSIONS = [
+        0 => '@image-delete',
+        2 => '@image-cancel',
+        9 => '@image-publish',
+    ];
+
+    protected $table = 'images';
+
+    protected $fillable = ['gallery_id', 'author', 'title', 'intro', 'view_num', 'comment_num', 'like_num', 'collect_num', 'is_cover', 'uploader_id', 'sort', 'state', 'published_at'];
+
+    protected $dates = ['published_at'];
+
+    protected $entities = [];
+
+    public function gallery()
+    {
+        return $this->belongsTo(Gallery::class, 'gallery_id', 'id');
+    }
+
+    public function tags()
+    {
+        return $this->belongsToMany(Tag::class);
+    }
+
+    public function tagged()
+    {
+        return $this->morphMany(Tagged::class, 'refer');
+    }
+
+    public static function stores($input)
+    {
+        $input['state'] = static::STATE_NORMAL;
+
+        $tags = implode('|', $input['tag']);
+
+        $image = static::create($input);
+
+        $tag = $image->tagged()->create([
+            'tags' => $tags,
+        ]);
+
+        //保存图片资源
+        if ($image) {
+            //查询该图片是否已有资源，有则删除然后上传
+            $count = $image->items()->count();
+            if ($count > 0) {
+                $image->items()->delete();
+            }
+
+            $image->items()->create([
+                'url' => $input['image_url'],
+                'size' => $input['size'],
+                'w' => $input['w'],
+                'h' => $input['h'],
+            ]);
+        }
+
+        return $image;
+    }
+
+    public static function updates($id, $input)
+    {
+        $image = static::find($id);
+
+        $tags['tags'] = implode('|', $input['tag']);
+        $tag = Tagged::where('refer_id', $id)->update($tags);
+
+        $result = $image->update($input);
+
+        //保存图片资源
+        if ($result) {
+            //todo 查询oss图片资源，删除该资源
+
+            $image->items()->update([
+                'url' => $input['image_url'],
+                'size' => $input['size'],
+                'w' => $input['w'],
+                'h' => $input['h'],
+            ]);
+        }
+
+        return $image;
+    }
+
+    public static function table($gallery_id)
+    {
+        $filters = Request::all();
+
+        $offset = Request::get('offset') ? Request::get('offset') : 0;
+        $limit = Request::get('limit') ? Request::get('limit') : 20;
+
+        $ds = new DataSource();
+
+        $images = static::where('gallery_id', $gallery_id)
+            ->filter($filters)
+            ->orderBy('sort', 'desc')
+            ->skip($offset)
+            ->limit($limit)
+            ->get();
+
+        $ds->total = static::where('gallery_id', $gallery_id)
+            ->filter($filters)
+            ->count();
+
+        $images->transform(function ($image) {
+            $attributes = $image->getAttributes();
+
+            //实体类型
+            foreach ($image->entities as $entity) {
+                $entity_map = str_replace('_id', '_name', $entity);
+                $entity = str_replace('_id', '', $entity);
+                $attributes[$entity_map] = empty($image->$entity) ? '' : $image->$entity->name;
+            }
+
+            //日期类型
+            foreach ($image->dates as $date) {
+                $attributes[$date] = empty($image->$date) ? '' : $image->$date->toDateTimeString();
+            }
+
+            $gallery = $image->gallery()->first();
+
+            $attributes['uploader_id'] = ($gallery->source == Gallery::SOURCE_MEMBER) ? Member::find($attributes['uploader_id'])->name : User::find($attributes['uploader_id'])->name;
+            $attributes['state_name'] = $image->stateName();
+            $attributes['created_at'] = empty($image->created_at) ? '' : $image->created_at->toDateTimeString();
+            $attributes['updated_at'] = empty($image->updated_at) ? '' : $image->updated_at->toDateTimeString();
+            return $attributes;
+        });
+
+        $ds->rows = $images;
+
+        return Response::json($ds);
+    }
+
+    /**
+     * 排序
+     */
+    public static function sort()
+    {
+        $select_id = request('select_id');
+        $place_id = request('place_id');
+        $move_down = request('move_down');
+
+        $select = self::find($select_id);
+        $place = self::find($place_id);
+
+        if (empty($select) || empty($place)) {
+            return Response::json([
+                'status_code' => 404,
+                'message' => 'ID不存在',
+            ]);
+        }
+
+        if ($select->top && !$place->top) {
+            return Response::json([
+                'status_code' => 404,
+                'message' => '置顶记录不允许移至普通位置',
+            ]);
+        }
+
+        if (!$select->top && $place->top) {
+            return Response::json([
+                'status_code' => 404,
+                'message' => '普通记录不允许移至置顶位置',
+            ]);
+        }
+
+        $sort = $place->sort;
+        try {
+            if ($move_down) {
+                //下移
+                //增加移动区间的排序值
+                self::where('sort', '>=', $place->sort)
+                    ->where('sort', '<', $select->sort)
+                    ->increment('sort');
+            } else {
+                //上移
+                //减少移动区间的排序值
+                self::where('sort', '>', $select->sort)
+                    ->where('sort', '<=', $place->sort)
+                    ->decrement('sort');
+            }
+        } catch (Exception $e) {
+            return Response::json([
+                'status_code' => 500,
+                'message' => $e->getMessage(),
+            ]);
+        }
+        $select->sort = $sort;
+        $select->save();
+
+        return Response::json([
+            'status_code' => 200,
+            'message' => 'success',
+        ]);
+    }
+}

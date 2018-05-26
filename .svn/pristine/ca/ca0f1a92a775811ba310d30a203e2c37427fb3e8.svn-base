@@ -1,0 +1,188 @@
+body{
+    background: #eee;
+}
+.u-wrapper{
+    background: #eee;
+    color: #555;
+    padding-bottom: 380px;
+}
+.u-wrapper a{
+    color: #555;
+}
+.logo{
+    padding: 266px 0 136px;
+    text-align: center;
+}
+.head{
+    height: 350px;
+    background: #ffcc42;
+    padding-top: 47px;
+}
+.head .avatar{
+    width: 140px;
+    height: 140px;
+    border: 5px solid #fff;
+    background: #a0a0a0;
+    margin: 0 auto;
+    position: relative;
+}
+.head .avatar i{
+    background: url('../images/members/vip.png') no-repeat;
+    position: absolute;
+    top: -27px;
+    left: -27px;
+    height: 54px;
+    width: 54px;
+}
+.head h3{
+    font-size: 50px;
+    color: #393a3f;
+    text-align: center;
+    margin-top: 33px;
+}
+.content{
+    background: #fff;
+    margin: 0 auto;
+    padding: 0 4.5%;
+    text-align: justify;
+}
+.order{
+    height: 356px;
+    background: #fff;
+    width: 100%;
+}
+.order .o-title{
+    height: 145px;
+    line-height: 145px;
+    border-bottom: 2px solid #eff0f1;
+    padding-left: 64px;
+    background: url('../images/members/all-order.png') no-repeat 0 51px;
+}
+.order .o-title a{
+    float: right;
+}
+.order ul li{
+    float: left;
+    padding-top: 126px;
+    margin-right: 15%;
+    text-align: center;
+    position: relative;
+}
+.order ul li i{
+    background-color: #ffcc42;
+    display: inline-block;
+    width: 18px;
+    height: 18px;
+    border-radius: 9px;
+    position: absolute;
+    top: 26px;
+    right: 0px;
+}
+.order ul li:first-child{
+    background: url('../images/members/wait-pay.png') no-repeat center 43px;
+}
+.order ul li:nth-child(2){
+    background: url('../images/members/wait-send.png') no-repeat center 43px;
+}
+.order ul li:nth-child(3){
+    background: url('../images/members/wait-receive.png') no-repeat center 43px;
+}
+.order ul li:nth-child(4){
+    background: url('../images/members/wait-back.png') no-repeat center 43px;
+}
+.order ul li:last-child{
+    margin-right: 0;
+}
+.wallet{
+    height: 320px;
+    background: #fff;
+    width: 100%;
+    margin-top: 30px;
+}
+.wallet .w-title{
+    height: 145px;
+    line-height: 145px;
+    border-bottom: 2px solid #eff0f1;
+    padding-left: 64px;
+    background: url('../images/members/wallet.png') no-repeat 0 51px;
+}
+.wallet ul li{
+    float: left;
+    width: 32.8%;
+    text-align: center;
+    font-size: 40px;
+}
+.wallet ul li h5{
+    margin: 20px auto;
+    font-size: 40px;
+}
+.wallet ul li:last-child{
+    margin-right: 0;
+}
+.set{
+    margin-top: 30px;
+    background: #fff;
+}
+.set ul li{
+    height: 144px;
+    line-height: 144px;
+    padding-left: 68px;
+    border-bottom: 2px solid #eff0f1;
+}
+.set ul li:first-child{
+    background: url('../images/members/s-address.png') no-repeat 0 48px;
+}
+.set ul li:nth-child(2){
+    background: url('../images/members/s-vip.png') no-repeat 0 48px;
+}
+.set ul li:nth-child(3){
+    background: url('../images/members/s-phone.png') no-repeat 0 48px;
+}
+.set ul li.s-user{
+    margin-top: 0px;
+    background: url('../images/members/s-user.png') no-repeat 0 48px;
+}
+.set ul li.s-like{
+    margin-top: 30px;
+    background: url('../images/members/s-like.png') no-repeat 0 48px;
+}
+.vip-text {
+    background: #fff;
+    padding: 120px 2.5% 80px;
+}
+/**** wallet ****/
+.w-wrapper{
+    height: 550px;
+    padding-top: 180px;
+    background: #fff;
+}
+.w-wrapper .v-wallet{
+    margin: 0 auto;
+    font-size: 170px;
+    width: 300px;
+    text-align: center;
+}
+.w-wrapper .title{
+    margin: 30px auto 168px;
+    width: 300px;
+    text-align: center;
+    font-size: 42px;
+}
+.take-out{
+    height: 114px;
+    background: #fff url('../images/members/take_out.png') no-repeat 968px 36px;
+    line-height: 114px;
+    margin-top: 28px;
+    padding: 0 86px;
+}
+ul.refund{
+    margin-top: 30px;
+    background: #eee;
+}
+ul.refund li{
+    background: #fff url(../images/members/li_bg_2.png) no-repeat top right;
+    margin-top: 10px;
+    height: 130px;
+    line-height: 130px;
+    padding: 0 70px;
+}

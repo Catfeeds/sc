@@ -1,0 +1,590 @@
+
+-- -----------
+-- 2018-4-23
+-- -----------
+
+ALTER TABLE `mk_bills`
+CHANGE COLUMN `type` `type` TINYINT(1) UNSIGNED NOT NULL COMMENT '交易类型（0课程费用 1直播费用 2约课费用 3约课退款）' ,
+CHANGE COLUMN `money` `money` INT(10) UNSIGNED NOT NULL COMMENT '交易金额(单位: 分)' ;
+
+ALTER TABLE `mk_carts`
+CHANGE COLUMN `price` `price` INT(10) UNSIGNED NOT NULL COMMENT '商品单价(单位: 分)' ;
+
+ALTER TABLE `mk_lives`
+CHANGE COLUMN `price` `price` DECIMAL(10,2) UNSIGNED NOT NULL COMMENT '价格(单位：分)' ;
+
+ALTER TABLE `mk_lives`
+CHANGE COLUMN `price` `price` INT(10) UNSIGNED NOT NULL COMMENT '价格(单位：分)' ;
+
+ALTER TABLE `mk_orders`
+CHANGE COLUMN `amount` `amount` INT(10) UNSIGNED NOT NULL COMMENT '订单实付金额(单位：分)' ,
+CHANGE COLUMN `coupon_discount` `coupon_discount` INT(10) UNSIGNED NOT NULL DEFAULT '0' COMMENT '优惠码扣减金额（单位：分）' ;
+
+ALTER TABLE `mk_courses`
+CHANGE COLUMN `price` `price` INT(10) UNSIGNED NOT NULL DEFAULT '0' COMMENT '课程价格(单位：分)' ,
+CHANGE COLUMN `income` `income` INT(10) UNSIGNED NOT NULL DEFAULT '0' COMMENT '课程销售总收入（单位：分）' ;
+
+ALTER TABLE `mk_offline_records`
+CHANGE COLUMN `price` `price` INT(10) UNSIGNED NOT NULL COMMENT '单价' ,
+CHANGE COLUMN `total_price` `total_price` INT(10) UNSIGNED NOT NULL COMMENT '总价' ,
+CHANGE COLUMN `diff_price` `diff_price` INT(10) UNSIGNED NOT NULL COMMENT '差价' ;
+
+
+-- -----------
+-- 2018-4-24
+-- -----------
+
+ALTER TABLE `mk_lives`
+CHANGE COLUMN `cover` `cover_url` VARCHAR(255) NULL DEFAULT NULL COMMENT '封面图url' ;
+
+ALTER TABLE `mk_items`
+ADD COLUMN `type` TINYINT(1) UNSIGNED NOT NULL COMMENT '资源类型（0图片 1音频 2视频）' AFTER `deleted_at`;
+
+ALTER TABLE `mk_carts`
+CHANGE COLUMN `id` `id` INT(10) UNSIGNED NOT NULL AUTO_INCREMENT ;
+
+ALTER TABLE `mk_carts`
+ADD COLUMN `member_id` INT(10) UNSIGNED NOT NULL COMMENT '会员id' AFTER `order_id`;
+
+ALTER TABLE `mk_offline_records`
+DROP COLUMN `record_sn`;
+
+ALTER TABLE `mk_carts`
+CHANGE COLUMN `state` `state` TINYINT(1) UNSIGNED NOT NULL COMMENT '商品状态(0未支付 1支付)' ;
+
+ALTER TABLE `mk_offline_records`
+CHANGE COLUMN `state` `state` TINYINT(1) UNSIGNED NOT NULL COMMENT '状态状态(0未支付 1支付，待老师接受 2已接受,未上课 3已上课，待评价 4（已评价）约课完成 5投诉待处理 6投诉处理中 7投诉处理结束)' ;
+
+
+
+-- Date: 2018-04-23 21:00
+
+INSERT INTO `mk_permissions` (`id`,`name`,`description`,`group`,`sort`,`created_at`,`updated_at`) VALUES (267,'@live','直播管理',10,1,'2016-06-30 08:00:00','2016-06-30 08:00:00');
+INSERT INTO `mk_permissions` (`id`,`name`,`description`,`group`,`sort`,`created_at`,`updated_at`) VALUES (268,'@live-edit','直播管理-编辑',10,3,'2016-06-30 08:00:00','2016-06-30 08:00:00');
+INSERT INTO `mk_permissions` (`id`,`name`,`description`,`group`,`sort`,`created_at`,`updated_at`) VALUES (269,'@live-publish','直播管理-发布',10,4,'2016-06-30 08:00:00','2016-06-30 08:00:00');
+INSERT INTO `mk_permissions` (`id`,`name`,`description`,`group`,`sort`,`created_at`,`updated_at`) VALUES (270,'@live-cancel','直播管理-撤搞',10,5,'2016-06-30 08:00:00','2016-06-30 08:00:00');
+INSERT INTO `mk_permissions` (`id`,`name`,`description`,`group`,`sort`,`created_at`,`updated_at`) VALUES (271,'@live-delete','直播管理-删除',10,6,'2016-06-30 08:00:00','2016-06-30 08:00:00');
+INSERT INTO `mk_permissions` (`id`,`name`,`description`,`group`,`sort`,`created_at`,`updated_at`) VALUES (272,'@live-copy','直播管理-复制',10,7,'2016-06-30 08:00:00','2016-06-30 08:00:00');
+INSERT INTO `mk_permissions` (`id`,`name`,`description`,`group`,`sort`,`created_at`,`updated_at`) VALUES (273,'@live-sort','直播管理-排序',10,8,'2016-06-30 08:00:00','2016-06-30 08:00:00');
+INSERT INTO `mk_permissions` (`id`,`name`,`description`,`group`,`sort`,`created_at`,`updated_at`) VALUES (274,'@live-top','直播管理-置顶',10,9,'2016-06-30 08:00:00','2016-06-30 08:00:00');
+INSERT INTO `mk_permissions` (`id`,`name`,`description`,`group`,`sort`,`created_at`,`updated_at`) VALUES (275,'@live-tag','直播管理-标记',10,10,'2016-11-17 00:00:00','2016-11-17 00:00:00');
+INSERT INTO `mk_permissions` (`id`,`name`,`description`,`group`,`sort`,`created_at`,`updated_at`) VALUES (276,'@live-push','直播管理-推送',10,11,'2016-06-30 08:00:00','2016-06-30 08:00:00');
+INSERT INTO `mk_permissions` (`id`,`name`,`description`,`group`,`sort`,`created_at`,`updated_at`) VALUES (277,'@live-create','直播管理-新增',10,2,'2016-06-30 08:00:00','2016-06-30 08:00:00');
+INSERT INTO `mk_permissions` (`id`,`name`,`description`,`group`,`sort`,`created_at`,`updated_at`) VALUES (278,'@version','版本管理',11,1,'2016-06-30 08:00:00','2016-06-30 08:00:00');
+INSERT INTO `mk_permissions` (`id`,`name`,`description`,`group`,`sort`,`created_at`,`updated_at`) VALUES (279,'@version-create','版本管理-更新',11,2,'2016-06-30 08:00:00','2016-06-30 08:00:00');
+INSERT INTO `mk_permissions` (`id`,`name`,`description`,`group`,`sort`,`created_at`,`updated_at`) VALUES (280,'@version-edit','版本管理-编辑',11,3,'2016-06-30 08:00:00','2016-06-30 08:00:00');
+INSERT INTO `mk_permissions` (`id`,`name`,`description`,`group`,`sort`,`created_at`,`updated_at`) VALUES (281,'@version-delete','版本管理-删除',11,4,'2016-06-30 08:00:00','2016-06-30 08:00:00');
+INSERT INTO `mk_permissions` (`id`,`name`,`description`,`group`,`sort`,`created_at`,`updated_at`) VALUES (282,'@chapter','章节管理',12,1,'2016-06-30 08:00:00','2016-06-30 08:00:00');
+INSERT INTO `mk_permissions` (`id`,`name`,`description`,`group`,`sort`,`created_at`,`updated_at`) VALUES (283,'@chapter-create','章节管理-新增',12,2,'2016-06-30 08:00:00','2016-06-30 08:00:00');
+INSERT INTO `mk_permissions` (`id`,`name`,`description`,`group`,`sort`,`created_at`,`updated_at`) VALUES (284,'@chapter-edit','章节管理-编辑',12,3,'2016-06-30 08:00:00','2016-06-30 08:00:00');
+INSERT INTO `mk_permissions` (`id`,`name`,`description`,`group`,`sort`,`created_at`,`updated_at`) VALUES (285,'@chapter-delete','章节管理-删除',12,4,'2016-06-30 08:00:00','2016-06-30 08:00:00');
+INSERT INTO `mk_permissions` (`id`,`name`,`description`,`group`,`sort`,`created_at`,`updated_at`) VALUES (286,'@lesson','课时管理',13,1,'2016-06-30 08:00:00','2016-06-30 08:00:00');
+INSERT INTO `mk_permissions` (`id`,`name`,`description`,`group`,`sort`,`created_at`,`updated_at`) VALUES (287,'@lesson-create','课时管理-新增',13,2,'2016-06-30 08:00:00','2016-06-30 08:00:00');
+INSERT INTO `mk_permissions` (`id`,`name`,`description`,`group`,`sort`,`created_at`,`updated_at`) VALUES (288,'@lesson-edit','课时管理-编辑',13,3,'2016-06-30 08:00:00','2016-06-30 08:00:00');
+INSERT INTO `mk_permissions` (`id`,`name`,`description`,`group`,`sort`,`created_at`,`updated_at`) VALUES (289,'@lesson-delete','课时管理-删除',13,4,'2016-06-30 08:00:00','2016-06-30 08:00:00');
+
+-- Date: 2018-04-23 21:21
+
+INSERT INTO `mk_module_fields` (`id`,`module_id`,`name`,`title`,`label`,`type`,`default`,`required`,`unique`,`min_length`,`max_length`,`system`,`index`,`column_show`,`column_editable`,`column_align`,`column_width`,`column_formatter`,`column_index`,`editor_show`,`editor_readonly`,`editor_type`,`editor_options`,`editor_rows`,`editor_columns`,`editor_group`,`editor_index`,`created_at`,`updated_at`) VALUES (611,13,'id','ID','ID',3,'',0,0,0,0,1,1,1,0,1,45,'',1,0,0,0,'',0,0,'',0,'2018-04-20 17:22:04','2018-04-20 17:22:04');
+INSERT INTO `mk_module_fields` (`id`,`module_id`,`name`,`title`,`label`,`type`,`default`,`required`,`unique`,`min_length`,`max_length`,`system`,`index`,`column_show`,`column_editable`,`column_align`,`column_width`,`column_formatter`,`column_index`,`editor_show`,`editor_readonly`,`editor_type`,`editor_options`,`editor_rows`,`editor_columns`,`editor_group`,`editor_index`,`created_at`,`updated_at`) VALUES (613,13,'title','标题','标题',1,'',0,0,0,0,1,2,1,0,1,0,'',2,1,0,1,'',0,11,'基本信息',1,'2018-04-20 17:22:04','2018-04-23 16:12:02');
+INSERT INTO `mk_module_fields` (`id`,`module_id`,`name`,`title`,`label`,`type`,`default`,`required`,`unique`,`min_length`,`max_length`,`system`,`index`,`column_show`,`column_editable`,`column_align`,`column_width`,`column_formatter`,`column_index`,`editor_show`,`editor_readonly`,`editor_type`,`editor_options`,`editor_rows`,`editor_columns`,`editor_group`,`editor_index`,`created_at`,`updated_at`) VALUES (620,13,'deleted_at','删除时间','删除时间',5,'',0,0,0,0,1,97,0,0,0,0,'',0,0,0,0,'',0,0,'',0,'2018-04-20 17:22:05','2018-04-20 17:22:05');
+INSERT INTO `mk_module_fields` (`id`,`module_id`,`name`,`title`,`label`,`type`,`default`,`required`,`unique`,`min_length`,`max_length`,`system`,`index`,`column_show`,`column_editable`,`column_align`,`column_width`,`column_formatter`,`column_index`,`editor_show`,`editor_readonly`,`editor_type`,`editor_options`,`editor_rows`,`editor_columns`,`editor_group`,`editor_index`,`created_at`,`updated_at`) VALUES (621,13,'published_at','发布时间','发布时间',5,'',0,0,0,0,1,98,0,0,0,0,'',0,0,0,0,'',0,0,'',0,'2018-04-20 17:22:05','2018-04-20 17:22:05');
+INSERT INTO `mk_module_fields` (`id`,`module_id`,`name`,`title`,`label`,`type`,`default`,`required`,`unique`,`min_length`,`max_length`,`system`,`index`,`column_show`,`column_editable`,`column_align`,`column_width`,`column_formatter`,`column_index`,`editor_show`,`editor_readonly`,`editor_type`,`editor_options`,`editor_rows`,`editor_columns`,`editor_group`,`editor_index`,`created_at`,`updated_at`) VALUES (624,13,'member_id','会员ID','会员',7,'',0,0,0,0,1,91,0,0,0,0,'',0,0,0,0,'',0,0,'',0,'2018-04-23 10:18:31','2018-04-23 10:18:31');
+INSERT INTO `mk_module_fields` (`id`,`module_id`,`name`,`title`,`label`,`type`,`default`,`required`,`unique`,`min_length`,`max_length`,`system`,`index`,`column_show`,`column_editable`,`column_align`,`column_width`,`column_formatter`,`column_index`,`editor_show`,`editor_readonly`,`editor_type`,`editor_options`,`editor_rows`,`editor_columns`,`editor_group`,`editor_index`,`created_at`,`updated_at`) VALUES (625,13,'user_id','用户ID','用户',7,'',0,0,0,0,1,92,0,0,0,0,'',0,0,0,0,'',0,0,'',0,'2018-04-23 10:18:31','2018-04-23 10:18:31');
+INSERT INTO `mk_module_fields` (`id`,`module_id`,`name`,`title`,`label`,`type`,`default`,`required`,`unique`,`min_length`,`max_length`,`system`,`index`,`column_show`,`column_editable`,`column_align`,`column_width`,`column_formatter`,`column_index`,`editor_show`,`editor_readonly`,`editor_type`,`editor_options`,`editor_rows`,`editor_columns`,`editor_group`,`editor_index`,`created_at`,`updated_at`) VALUES (626,13,'sort','序号','序号',3,'',0,0,0,0,1,93,0,0,0,0,'',0,0,0,0,'',0,0,'',0,'2018-04-23 10:18:31','2018-04-23 10:18:31');
+INSERT INTO `mk_module_fields` (`id`,`module_id`,`name`,`title`,`label`,`type`,`default`,`required`,`unique`,`min_length`,`max_length`,`system`,`index`,`column_show`,`column_editable`,`column_align`,`column_width`,`column_formatter`,`column_index`,`editor_show`,`editor_readonly`,`editor_type`,`editor_options`,`editor_rows`,`editor_columns`,`editor_group`,`editor_index`,`created_at`,`updated_at`) VALUES (627,13,'state','状态','状态',3,'',0,0,0,0,1,94,1,0,2,45,'stateFormatter',6,1,0,3,'coming,ongoing,end',1,2,'基本信息',9,'2018-04-23 10:18:31','2018-04-23 17:04:22');
+INSERT INTO `mk_module_fields` (`id`,`module_id`,`name`,`title`,`label`,`type`,`default`,`required`,`unique`,`min_length`,`max_length`,`system`,`index`,`column_show`,`column_editable`,`column_align`,`column_width`,`column_formatter`,`column_index`,`editor_show`,`editor_readonly`,`editor_type`,`editor_options`,`editor_rows`,`editor_columns`,`editor_group`,`editor_index`,`created_at`,`updated_at`) VALUES (628,13,'created_at','创建时间','创建时间',5,'',0,0,0,0,1,95,0,0,0,0,'',0,0,0,0,'',0,0,'',0,'2018-04-23 10:18:31','2018-04-23 10:18:31');
+INSERT INTO `mk_module_fields` (`id`,`module_id`,`name`,`title`,`label`,`type`,`default`,`required`,`unique`,`min_length`,`max_length`,`system`,`index`,`column_show`,`column_editable`,`column_align`,`column_width`,`column_formatter`,`column_index`,`editor_show`,`editor_readonly`,`editor_type`,`editor_options`,`editor_rows`,`editor_columns`,`editor_group`,`editor_index`,`created_at`,`updated_at`) VALUES (629,13,'updated_at','修改时间','修改时间',5,'',0,0,0,0,1,96,0,0,0,0,'',0,0,0,0,'',0,0,'',0,'2018-04-23 10:18:31','2018-04-23 10:18:31');
+INSERT INTO `mk_module_fields` (`id`,`module_id`,`name`,`title`,`label`,`type`,`default`,`required`,`unique`,`min_length`,`max_length`,`system`,`index`,`column_show`,`column_editable`,`column_align`,`column_width`,`column_formatter`,`column_index`,`editor_show`,`editor_readonly`,`editor_type`,`editor_options`,`editor_rows`,`editor_columns`,`editor_group`,`editor_index`,`created_at`,`updated_at`) VALUES (643,13,'intro','直播介绍','直播介绍',2,'',0,0,0,0,0,3,0,0,1,0,'',3,1,0,2,'',4,11,'基本信息',2,'2018-04-23 16:13:30','2018-04-23 16:54:17');
+INSERT INTO `mk_module_fields` (`id`,`module_id`,`name`,`title`,`label`,`type`,`default`,`required`,`unique`,`min_length`,`max_length`,`system`,`index`,`column_show`,`column_editable`,`column_align`,`column_width`,`column_formatter`,`column_index`,`editor_show`,`editor_readonly`,`editor_type`,`editor_options`,`editor_rows`,`editor_columns`,`editor_group`,`editor_index`,`created_at`,`updated_at`) VALUES (644,13,'cover','封面','封面',8,'',0,0,0,0,0,4,0,0,1,0,'',0,1,0,8,'',1,11,'正文',3,'2018-04-23 16:15:02','2018-04-23 16:54:25');
+INSERT INTO `mk_module_fields` (`id`,`module_id`,`name`,`title`,`label`,`type`,`default`,`required`,`unique`,`min_length`,`max_length`,`system`,`index`,`column_show`,`column_editable`,`column_align`,`column_width`,`column_formatter`,`column_index`,`editor_show`,`editor_readonly`,`editor_type`,`editor_options`,`editor_rows`,`editor_columns`,`editor_group`,`editor_index`,`created_at`,`updated_at`) VALUES (645,13,'poster_url','海报','海报',8,'',0,0,0,0,0,5,0,0,1,0,'',0,1,0,8,'',1,11,'正文',4,'2018-04-23 16:16:04','2018-04-23 16:54:30');
+INSERT INTO `mk_module_fields` (`id`,`module_id`,`name`,`title`,`label`,`type`,`default`,`required`,`unique`,`min_length`,`max_length`,`system`,`index`,`column_show`,`column_editable`,`column_align`,`column_width`,`column_formatter`,`column_index`,`editor_show`,`editor_readonly`,`editor_type`,`editor_options`,`editor_rows`,`editor_columns`,`editor_group`,`editor_index`,`created_at`,`updated_at`) VALUES (646,13,'stream_url','直播地址','直播地址',1,'',0,0,0,0,0,6,1,0,1,0,'',4,1,0,1,'',1,11,'基本信息',5,'2018-04-23 16:16:30','2018-04-23 16:56:00');
+INSERT INTO `mk_module_fields` (`id`,`module_id`,`name`,`title`,`label`,`type`,`default`,`required`,`unique`,`min_length`,`max_length`,`system`,`index`,`column_show`,`column_editable`,`column_align`,`column_width`,`column_formatter`,`column_index`,`editor_show`,`editor_readonly`,`editor_type`,`editor_options`,`editor_rows`,`editor_columns`,`editor_group`,`editor_index`,`created_at`,`updated_at`) VALUES (647,13,'start_at','直播时间','直播时间',5,'',0,0,0,0,0,7,1,0,1,0,'',5,1,0,5,'',1,2,'基本信息',6,'2018-04-23 16:16:54','2018-04-23 16:58:12');
+INSERT INTO `mk_module_fields` (`id`,`module_id`,`name`,`title`,`label`,`type`,`default`,`required`,`unique`,`min_length`,`max_length`,`system`,`index`,`column_show`,`column_editable`,`column_align`,`column_width`,`column_formatter`,`column_index`,`editor_show`,`editor_readonly`,`editor_type`,`editor_options`,`editor_rows`,`editor_columns`,`editor_group`,`editor_index`,`created_at`,`updated_at`) VALUES (648,13,'duration','直播时长','直播时长',3,'',0,0,0,0,0,8,0,0,1,0,'',0,1,0,1,'',1,2,'基本信息',7,'2018-04-23 16:17:26','2018-04-23 16:59:12');
+INSERT INTO `mk_module_fields` (`id`,`module_id`,`name`,`title`,`label`,`type`,`default`,`required`,`unique`,`min_length`,`max_length`,`system`,`index`,`column_show`,`column_editable`,`column_align`,`column_width`,`column_formatter`,`column_index`,`editor_show`,`editor_readonly`,`editor_type`,`editor_options`,`editor_rows`,`editor_columns`,`editor_group`,`editor_index`,`created_at`,`updated_at`) VALUES (649,13,'price','价格','价格',3,'',0,0,0,0,0,9,0,0,1,0,'',0,1,0,1,'',1,2,'基本信息',8,'2018-04-23 16:17:43','2018-04-23 16:59:35');
+INSERT INTO `mk_module_fields` (`id`,`module_id`,`name`,`title`,`label`,`type`,`default`,`required`,`unique`,`min_length`,`max_length`,`system`,`index`,`column_show`,`column_editable`,`column_align`,`column_width`,`column_formatter`,`column_index`,`editor_show`,`editor_readonly`,`editor_type`,`editor_options`,`editor_rows`,`editor_columns`,`editor_group`,`editor_index`,`created_at`,`updated_at`) VALUES (650,13,'bought_num','购买人数','购买人数',3,'',0,0,0,0,0,10,0,0,1,0,'',0,0,0,1,'',1,11,'基本信息',0,'2018-04-23 16:17:56','2018-04-23 16:20:42');
+INSERT INTO `mk_module_fields` (`id`,`module_id`,`name`,`title`,`label`,`type`,`default`,`required`,`unique`,`min_length`,`max_length`,`system`,`index`,`column_show`,`column_editable`,`column_align`,`column_width`,`column_formatter`,`column_index`,`editor_show`,`editor_readonly`,`editor_type`,`editor_options`,`editor_rows`,`editor_columns`,`editor_group`,`editor_index`,`created_at`,`updated_at`) VALUES (651,13,'is_top','是否置顶','是否置顶',3,'',0,0,0,0,0,11,0,0,1,0,'',0,0,0,1,'',1,11,'基本信息',0,'2018-04-23 16:18:43','2018-04-23 16:18:43');
+
+INSERT INTO `mk_modules` (`id`,`name`,`title`,`table_name`,`groups`,`is_lock`,`icon`,`use_category`,`state`,`created_at`,`updated_at`) VALUES (13,'Live','直播','lives','基本信息,正文',0,'fa-video-camera',1,1,'2018-04-23 10:18:31','2018-04-23 16:05:25');
+ALTER TABLE `mk_apps`
+CHANGE COLUMN `note` `content` TEXT CHARACTER SET 'utf8' COLLATE 'utf8_unicode_ci' NULL DEFAULT NULL COMMENT '版本说明' ;
+
+UPDATE `mk_module_fields` SET `column_formatter`='titleFormatter' WHERE `id`='613';
+UPDATE `mk_module_fields` SET `column_formatter`='titleFormatter' WHERE `id`='588';
+UPDATE `mk_module_fields` SET `column_formatter`='titleFormatter' WHERE `id`='577';
+UPDATE `mk_module_fields` SET `column_formatter`='titleFormatter' WHERE `id`='526';
+
+
+
+
+-- -----------
+-- 2018-4-24 17:12 Update complete.
+-- -----------
+
+
+-- -----------
+-- 2018-4-24 19:10
+-- -----------
+
+ALTER TABLE `mk_moments`
+CHANGE COLUMN `id` `id` INT(10) UNSIGNED NOT NULL AUTO_INCREMENT ;
+
+ALTER TABLE `mk_chapters`
+CHANGE COLUMN `id` `id` INT(10) UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '课程章节ID' ;
+
+ALTER TABLE `mk_member_detail`
+CHANGE COLUMN `id` `id` INT(10) UNSIGNED NOT NULL AUTO_INCREMENT ;
+
+ALTER TABLE `mk_module_fields`
+CHANGE COLUMN `type` `type` TINYINT(1) UNSIGNED NOT NULL COMMENT '类型' ,
+CHANGE COLUMN `required` `required` TINYINT(1) UNSIGNED NOT NULL COMMENT '是否必填' ,
+CHANGE COLUMN `unique` `unique` TINYINT(1) UNSIGNED NOT NULL COMMENT '是否唯一' ,
+CHANGE COLUMN `column_show` `column_show` TINYINT(1) UNSIGNED NOT NULL COMMENT '列是否显示' ,
+CHANGE COLUMN `column_editable` `column_editable` TINYINT(1) UNSIGNED NOT NULL COMMENT '列是否可编辑' ,
+CHANGE COLUMN `column_align` `column_align` TINYINT(1) UNSIGNED NOT NULL COMMENT '列对齐方式' ,
+CHANGE COLUMN `editor_show` `editor_show` TINYINT(1) UNSIGNED NOT NULL COMMENT '编辑器是否显示' ,
+CHANGE COLUMN `editor_readonly` `editor_readonly` TINYINT(11) UNSIGNED NOT NULL COMMENT '编辑器是否只读' ,
+CHANGE COLUMN `editor_type` `editor_type` TINYINT(1) UNSIGNED NOT NULL COMMENT '编辑器类型' ;
+
+ALTER TABLE `mk_order_log`
+CHANGE COLUMN `id` `id` INT(10) UNSIGNED NOT NULL AUTO_INCREMENT ;
+
+
+-- -----------
+-- 2018-4-25 13:00 Update completed.
+-- -----------
+
+
+-- -----------
+-- 2018-4-26
+-- -----------
+
+ALTER TABLE `mk_comments`
+CHANGE COLUMN `likes` `like_num` INT(10) UNSIGNED NOT NULL COMMENT '点赞数' ;
+
+ALTER TABLE `mk_courses`
+CHANGE COLUMN `created_at` `created_at` TIMESTAMP NULL DEFAULT NULL COMMENT '创建时间' ;
+ALTER TABLE `mk_apps`
+CHANGE COLUMN `logo_url` `logo_url` TEXT CHARACTER SET 'utf8' COLLATE 'utf8_unicode_ci' NOT NULL COMMENT '南宁logo' AFTER `name`,
+CHANGE COLUMN `content` `android_content` TEXT CHARACTER SET 'utf8' COLLATE 'utf8_unicode_ci' NULL DEFAULT NULL COMMENT 'android 版本说明' AFTER `android_url`,
+ADD COLUMN `ios_content` TEXT NOT NULL COMMENT 'ios 更新说明' AFTER `ios_url`;
+ALTER TABLE `mk_articles`
+DROP COLUMN `link`,
+DROP COLUMN `link_type`,
+DROP COLUMN `images`;
+
+
+-- -----------
+-- 2018-4-27
+-- -----------
+ALTER TABLE `mk_chapters`
+ADD COLUMN `parent_id` INT(10) UNSIGNED NOT NULL AFTER `course_id`;
+
+
+-- -----------
+-- 2018-4-27
+-- -----------
+
+ALTER TABLE `mk_members`
+ADD COLUMN `im_token` VARCHAR(128) NOT NULL COMMENT '网易云即时通信token' AFTER `type`;
+
+
+-- -----------
+-- 2018-4-28
+-- -----------
+ALTER TABLE `mk_moments`
+CHANGE COLUMN `created_at` `created_at` TIMESTAMP NULL DEFAULT NULL ;
+
+
+-- -----------
+-- 2018-4-28 15:13 Update completed.
+-- -----------
+
+ALTER TABLE `mk_articles`
+CHANGE COLUMN `type` `type` TINYINT(1) UNSIGNED NOT NULL COMMENT '类型(小图 0,多图 1,大图2)' ;
+
+
+-- -----------
+-- 2018-5-2 yxy
+-- -----------
+
+ALTER TABLE `mk_lives`
+CHANGE COLUMN `state` `state` ENUM('coming', 'prepare', 'prepared', 'ongoing', 'end') NULL DEFAULT NULL COMMENT '状态' ;
+
+ALTER TABLE `mk_live_member`
+ADD COLUMN `room_id` VARCHAR(128) NULL AFTER `member_id`;
+
+ALTER TABLE `mk_live_member`
+ADD COLUMN `updated_at` TIMESTAMP NULL DEFAULT NULL AFTER `created_at`;
+
+ALTER TABLE `mk_live_member`
+DROP COLUMN `deleted_at`;
+
+ALTER TABLE `mk_live_member`
+ADD COLUMN `type` TINYINT(1) UNSIGNED NOT NULL DEFAULT 1 AFTER `updated_at`;
+
+-- -----------
+-- 2018-5-7 10:32 Update completed.
+-- -----------
+
+ALTER TABLE `mk_courses`
+CHANGE COLUMN `lession_num` `lesson_num` INT(10) UNSIGNED NOT NULL DEFAULT '0' COMMENT '课时数' ;
+
+-- -----------
+-- 2018-5-8 16:48 Update completed.
+-- -----------
+
+-- -----------
+-- 2018-5-9 yxy
+-- -----------
+ALTER TABLE `mk_items`
+CHANGE COLUMN `size` `size` INT(10) UNSIGNED NOT NULL COMMENT '文件大小' ;
+
+ALTER TABLE `mk_members`
+CHANGE COLUMN `type` `type` TINYINT(1) UNSIGNED NOT NULL COMMENT '会员身份(0教师 1家长 2少儿 3初中生 4高一学生 5高二学生 6高三学生 7大学生)' ;
+
+ALTER TABLE `mk_galleries`
+CHANGE COLUMN `published_at` `published_at` TIMESTAMP NULL DEFAULT NULL COMMENT '图集拥有者' ,
+ADD COLUMN `subname` VARCHAR(100) NOT NULL COMMENT '图集作者' AFTER `name`;
+
+ALTER TABLE `mk_members`
+ADD COLUMN `is_certified` TINYINT(1) UNSIGNED NOT NULL COMMENT '是否认证（0否 1是）' AFTER `title`;
+
+ALTER TABLE `mk_images`
+CHANGE COLUMN `uploader_id` `uploader_id` INT(10) UNSIGNED NOT NULL COMMENT '上传者id(member_id或者user_id)' ;
+
+ALTER TABLE `mk_follows`
+CHANGE COLUMN `member_id` `member_id` INT(10) UNSIGNED NOT NULL COMMENT '被关注会员ID' ;
+
+
+-- -----------
+-- 2018-5-10 9:05 Update completed.
+-- -----------
+
+-- -----------
+-- 2018-5-10 yxy
+-- -----------
+
+ALTER TABLE `mk_member_detail`
+ADD COLUMN `studio` VARCHAR(100) NOT NULL COMMENT '画室' AFTER `district`;
+ALTER TABLE `mk_member_detail`
+ADD COLUMN `school` VARCHAR(100) NOT NULL COMMENT '学校' AFTER `district`;
+
+-- -----------
+-- 2018-5-11 cb
+-- -----------
+ALTER TABLE `mk_members`
+CHANGE COLUMN `sex` `sex` TINYINT(1) UNSIGNED NOT NULL COMMENT '性别 0男 1女' ;
+ALTER TABLE `mk_lives`
+CHANGE COLUMN `state` `state` ENUM('coming','prepare','prepared','ongoing','end') NULL DEFAULT NULL COMMENT '状态  coming 未开始, prepare 待准备,prepared 准备完毕,ongoing 进行中,end 已结束' ;
+ALTER TABLE `mk_lives`
+CHANGE COLUMN `stream_url` `stream_url` VARCHAR(255) NULL DEFAULT NULL COMMENT '直播地址' ;
+ALTER TABLE `mk_lives`
+CHANGE COLUMN `deleted_at` `deleted_at` TIMESTAMP NULL DEFAULT NULL ;
+ALTER TABLE `mk_categories`
+CHANGE COLUMN `type` `type` TINYINT(1) UNSIGNED NOT NULL COMMENT '栏目类型 0 文章， 1课程， 2图库' ;
+
+
+-- -----------
+-- 2018-5-14 yxy
+-- -----------
+
+  CREATE TABLE `mk_pics` (
+  `id` INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `name` VARCHAR(45) NULL COMMENT '模块名',
+  `image` VARCHAR(255) NULL DEFAULT NULL COMMENT '图片',
+  `link` TEXT NULL COMMENT '跳转链接',
+  `type` TINYINT(1) NULL COMMENT '类型 0轮播 1广告',
+  `sort` INT(10) UNSIGNED NOT NULL,
+  `created_at` TIMESTAMP NULL DEFAULT NULL,
+  `updated_at` TIMESTAMP NULL DEFAULT NULL,
+  `deleted_at` TIMESTAMP NULL DEFAULT NULL,
+  PRIMARY KEY (`id`))
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = utf8mb4;
+
+
+ALTER TABLE `mk_courses`
+CHANGE COLUMN `recommended` `recommended` TINYINT(1) UNSIGNED NOT NULL DEFAULT '0' COMMENT '是否为推荐课程(0否 1是)' ;
+
+
+
+-- -----------
+-- 2018-5-14 cb
+-- -----------
+ALTER TABLE `mk_courses`
+ADD COLUMN `is_free` TINYINT(1) UNSIGNED NOT NULL COMMENT '是否免费 0否 1是' AFTER `recommended`,
+DROP COLUMN `recommended_seq`;
+ALTER TABLE `mk_categories`
+CHANGE COLUMN `type` `type` TINYINT(1) UNSIGNED NOT NULL COMMENT '栏目类型 0 文章， 1课程， 2图库 ,3直播 ,4首页' ;
+
+
+-- -----------
+-- 2018-5-15 10:19 Update completed.
+-- -----------
+
+-- -----------
+-- 2018-5-15 yxy
+-- -----------
+CREATE TABLE `mk_tagged` (
+  `id` INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `refer_id` INT(10) UNSIGNED NOT NULL,
+  `refer_type` VARCHAR(20) NULL,
+  `tags` VARCHAR(255) NULL COMMENT '标签（多个用竖线隔开|）',
+  `created_at` TIMESTAMP NULL DEFAULT NULL,
+  `updated_at` TIMESTAMP NULL DEFAULT NULL,
+  `deleted_at` TIMESTAMP NULL DEFAULT NULL,
+  PRIMARY KEY (`id`))
+DEFAULT CHARACTER SET = utf8mb4;
+
+
+-- -----------
+-- 2018-5-16 11:10 Update completed.
+-- -----------
+
+
+-- -----------
+-- 2018-5-16 cb
+-- -----------
+ALTER TABLE `mk_articles`
+CHANGE COLUMN `type` `type` TINYINT(1) UNSIGNED NOT NULL COMMENT '类型 0普通资讯' ,
+CHANGE COLUMN `published_at` `published_at` TIMESTAMP NULL DEFAULT NULL COMMENT '发布时间' AFTER `updated_at`,
+DROP COLUMN `site_id`;
+
+CREATE TABLE `mk_activitie` (
+  `id` INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `title` VARCHAR(255) NOT NULL COMMENT '标题',
+  `content` TEXT NOT NULL DEFAULT '' COMMENT '正文',
+  `cover_url` VARCHAR(255) NOT NULL DEFAULT '' COMMENT '封面图',
+  `sort` INT(10) UNSIGNED NOT NULL COMMENT '排序',
+  `start_at` TIMESTAMP NULL COMMENT '活动开始时间',
+  `end_at` TIMESTAMP NULL COMMENT '活动结束时间',
+  `user_id` TINYINT(1) UNSIGNED NOT NULL COMMENT '用户ID',
+  `state` INT(10) UNSIGNED NOT NULL,
+  `published_at` TIMESTAMP NULL,
+  `created_at` TIMESTAMP NULL,
+  `updated_at` TIMESTAMP NULL,
+  `deleted_at` TIMESTAMP NULL,
+  PRIMARY KEY (`id`))
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = utf8mb4
+COMMENT = '活动表';
+
+
+-- -----------
+-- 2018-5-16 16:27 Update completed.
+-- -----------
+
+DROP TABLE `mk_activitie`;
+CREATE TABLE `mk_activities` (
+  `id` INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `title` VARCHAR(255) NOT NULL COMMENT '标题',
+  `content` TEXT NOT NULL DEFAULT '' COMMENT '正文',
+  `web_url` VARCHAR(255) NOT NULL DEFAULT '' COMMENT '外链',
+  `cover_url` VARCHAR(255) NOT NULL DEFAULT '' COMMENT '封面图',
+  `sort` INT(10) UNSIGNED NOT NULL COMMENT '排序',
+  `start_at` TIMESTAMP NULL COMMENT '活动开始时间',
+  `end_at` TIMESTAMP NULL COMMENT '活动结束时间',
+  `user_id` TINYINT(1) UNSIGNED NOT NULL COMMENT '用户ID',
+  `state` INT(10) UNSIGNED NOT NULL,
+  `published_at` TIMESTAMP NULL,
+  `created_at` TIMESTAMP NULL,
+  `updated_at` TIMESTAMP NULL,
+  `deleted_at` TIMESTAMP NULL,
+  PRIMARY KEY (`id`))
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = utf8mb4
+COMMENT = '活动表';
+
+-- -----------
+-- 2018-5-16 18:36 Update completed.
+-- -----------
+
+-- -----------
+-- 2018-5-17 yxy
+-- -----------
+
+CREATE TABLE `mk_course_views` (
+  `id` INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `course_id` INT(10) UNSIGNED NOT NULL,
+  `lesson_id` INT(10) UNSIGNED NOT NULL,
+  `member_id` INT(10) UNSIGNED NOT NULL,
+  `course_title` VARCHAR(255) NOT NULL,
+  `chapter_seq` VARCHAR(20) NOT NULL,
+  `lesson_title` VARCHAR(255) NOT NULL,
+  `date` DATE NULL DEFAULT NULL,
+  `created_at` TIMESTAMP NULL DEFAULT NULL,
+  `updated_at` TIMESTAMP NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  INDEX `index1` (`course_id` DESC),
+  INDEX `index2` (`lesson_id` ASC),
+  INDEX `index3` (`member_id` ASC));
+
+
+-- -----------
+-- 2018-5-17 cb
+-- -----------
+ALTER TABLE `mk_tags`
+CHANGE COLUMN `type` `type` TINYINT(1) UNSIGNED NOT NULL COMMENT '类型 0图片' ;
+
+-- -----------
+-- 2018-5-18 10:00 Update completed.
+-- -----------
+
+-- -----------
+-- 2018-5-18 yxy
+-- -----------
+ALTER TABLE `mk_course_views`
+CHANGE COLUMN `member_id` `member_id` INT(10) UNSIGNED NOT NULL COMMENT '会员id' ,
+CHANGE COLUMN `course_title` `course_title` VARCHAR(255) NOT NULL COMMENT '课程标题' ,
+CHANGE COLUMN `chapter_seq` `chapter_seq` VARCHAR(20) NOT NULL COMMENT '章节序号（2-1）' ,
+CHANGE COLUMN `lesson_title` `lesson_title` VARCHAR(255) NOT NULL COMMENT '课时标题' ,
+CHANGE COLUMN `date` `date` TIMESTAMP NULL DEFAULT NULL COMMENT '观看日期（年月日）' ,
+CHANGE COLUMN `updated_at` `updated_at` TIMESTAMP NULL DEFAULT NULL COMMENT '进度' ,
+ADD COLUMN `progress` INT(10) UNSIGNED NOT NULL COMMENT '进度（秒）' AFTER `lesson_title`;
+
+
+-- -----------
+-- 2018-5-18 11:00 Update completed.
+-- -----------
+
+-- -----------
+-- 2018-5-18 cb
+-- -----------
+ALTER TABLE `mk_lessons`
+CHANGE COLUMN `duration` `duration` INT(10) UNSIGNED NOT NULL COMMENT '课程时长（单位秒）';
+
+
+-- -----------
+-- 2018-5-18 yxy
+-- -----------
+
+ALTER TABLE `mk_courses`
+ADD COLUMN `video_url` VARCHAR(255) NOT NULL COMMENT '试看视频地址' AFTER `poster_url`;
+
+ALTER TABLE `mk_courses`
+CHANGE COLUMN `buy_num` `bought_num` INT(10) NOT NULL DEFAULT '0' COMMENT '购买人数' ;
+
+-- -----------
+-- 2018-5-18 18:00 Update completed.
+-- -----------
+
+-- -----------
+-- 2018-5-18 cb
+-- -----------
+ALTER TABLE `mk_members`
+CHANGE COLUMN `state` `state` TINYINT(1) UNSIGNED NOT NULL COMMENT '状态 0已禁用 1启用' ;
+-- -----------
+-- 2018-5-19 yxy
+-- -----------
+ALTER TABLE `mk_course_views`
+ADD COLUMN `deleted_at` TIMESTAMP NULL DEFAULT NULL AFTER `updated_at`;
+
+ALTER TABLE `mk_live_member`
+CHANGE COLUMN `type` `state` TINYINT(1) UNSIGNED NOT NULL DEFAULT '1' COMMENT '状态 0已删除 1正常' AFTER `room_id`;
+
+-- -----------
+-- 2018-5-19 14:36 Update completed.
+-- -----------
+
+-- -----------
+-- 2018-5-19 yxy
+-- -----------
+ALTER TABLE `mk_order_log`
+ADD COLUMN `updated_at` TIMESTAMP NULL DEFAULT NULL AFTER `created_at`,
+ADD COLUMN `deleted_at` TIMESTAMP NULL DEFAULT NULL AFTER `updated_at`;
+
+
+-- -----------
+-- 2018-5-21 yxy
+-- -----------
+ALTER TABLE `mk_lives`
+ADD COLUMN `room_ids` TEXT NULL DEFAULT NULL AFTER `bought_num`;
+
+
+-- -----------
+-- 2018-5-21 09:36 Update completed.
+-- -----------
+
+
+-- -----------
+-- 2018-5-21 yxy
+-- -----------
+INSERT INTO `mk_options`(`code`,`name`,`value`,`type`,`option`) VALUES ('HOT_TEXT','热搜关键字(竖线“|”隔开)','素描|手绘|油画', 2, '');
+
+
+-- -----------
+-- 2018-5-21 18:01 Update completed.
+-- -----------
+
+-- -----------
+-- 2018-5-21 yxy
+-- -----------
+
+CREATE TABLE `mk_certifications` (
+  `id` INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `member_id` INT(10) UNSIGNED NOT NULL COMMENT '申请教师id',
+  `name` VARCHAR(50) NOT NULL COMMENT '真实姓名',
+  `avatar_url` TEXT NOT NULL COMMENT '真实头像',
+  `title` VARCHAR(255) NOT NULL COMMENT '职称（头衔）',
+  `degree` VARCHAR(255) NOT NULL COMMENT '学历（学位）',
+  `id_card` VARCHAR(20) NOT NULL COMMENT '身份证',
+  `card_photo` VARCHAR(255) NOT NULL COMMENT '手持身份证照片',
+  `reason` TEXT NOT NULL COMMENT '理由',
+  `user_id` INT(10) UNSIGNED NOT NULL COMMENT '操作管理员id',
+  `state` TINYINT(1) UNSIGNED NOT NULL COMMENT '状态（0未认证 1正在审核 2 审核通过 3审核失败）',
+  `created_at` TIMESTAMP NULL DEFAULT NULL,
+  `updated_at` TIMESTAMP NULL DEFAULT NULL,
+  `deleted_at` TIMESTAMP NULL DEFAULT NULL,
+  PRIMARY KEY (`id`));
+
+-- -----------
+-- 2018-5-21 cb
+-- -----------
+ALTER TABLE `mk_articles`
+DROP COLUMN `site_id`,
+CHANGE COLUMN `published_at` `published_at` DATETIME NULL DEFAULT NULL COMMENT '发布时间' AFTER `state`,
+CHANGE COLUMN `comment_num` `comment_num` INT(10) UNSIGNED NOT NULL COMMENT '评论数' ,
+CHANGE COLUMN `view_num` `view_num` INT(10) UNSIGNED NOT NULL COMMENT '浏览数' ,
+CHANGE COLUMN `state` `state` INT(10) UNSIGNED NOT NULL COMMENT '状态 0删除 1未发布 2撤回 9已发布' ;
+
+-- -----------
+-- 2018-5-22 yxy
+-- -----------
+
+CREATE TABLE `mk_coupons` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `refer_id` int(10) unsigned NOT NULL COMMENT '适用类型ID',
+  `refer_type` varchar(64) NOT NULL COMMENT '适用类型',
+  `code` varchar(255) NOT NULL COMMENT '优惠码',
+  `type` tinyint(1) unsigned NOT NULL COMMENT '优惠方式（0打折 1抵扣）',
+  `discount` float(10,2) unsigned NOT NULL COMMENT '若优惠方式为打折，则为打折率，若为抵价，则为抵价金额',
+  `batch_id` int(10) unsigned NOT NULL COMMENT '批次号',
+  `member_id` int(10) unsigned NOT NULL COMMENT '使用者',
+  `order_id` int(10) unsigned NOT NULL COMMENT '订单号',
+  `state` tinyint(1) unsigned NOT NULL COMMENT '状态 0未使用 1已使用 2失效',
+  `use_at` timestamp NULL DEFAULT NULL COMMENT '使用时间',
+  `deadline` timestamp NULL DEFAULT NULL COMMENT '失效时间',
+  `received_at` timestamp NULL DEFAULT NULL COMMENT '接收时间',
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  `deleted_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `code` (`code`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='优惠码表';
+
+
+-- -----------
+-- 2018-5-23 16:40 Update completed.
+-- -----------
+
+-- -----------
+-- 2018-5-24 yxy
+-- -----------
+ALTER TABLE `mk_order_log`
+RENAME TO  `mk_order_logs` ;
+
+-- -----------
+-- 2018-5-24 09:15 Update completed.
+-- -----------
+

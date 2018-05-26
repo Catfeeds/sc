@@ -1,0 +1,131 @@
+<?php
+
+namespace App\Api\Controllers;
+
+use App\Models\Certification;
+use Request;
+use Exception;
+use Validator;
+
+class CertificationController extends BaseController
+{
+    public function check($input)
+    {
+        $rules = [
+            'name' => 'required|string',
+            'avatar_url' => 'required|string',
+            'title' => 'required|string',
+            'degree' => 'required|string',
+            'card_photo' => 'required|string',
+        ];
+
+        $messages = [
+            'name.required' => 'course_id不能为空',
+            'name.integer' => 'name必须为字符串',
+            'avatar_url.required' => 'avatar_url不能为空',
+            'avatar_url.integer' => 'avatar_url必须为字符串',
+            'title.required' => 'title不能为空',
+            'title.integer' => 'title必须为字符串',
+            'card_photo.required' => 'card_photo不能为空',
+            'card_photo.integer' => 'card_photo必须为字符串',
+        ];
+
+        $validate = Validator::make($input, $rules, $messages);
+
+        if ($validate->fails()) {
+            throw new Exception($validate->errors()->first());
+        }
+
+        return $input;
+    }
+
+    /**
+     * @SWG\Post(
+     *   path="/member/certify",
+     *   summary="教师认证",
+     *   tags={"/member 用户"},
+     *   @SWG\Response(
+     *     response=200,
+     *     description="教师认证信息上传成功"
+     *   ),
+     *   @SWG\Response(
+     *     response="404",
+     *     description="教师认证信息上传失败"
+     *   )
+     * )
+     */
+    public function certify()
+    {
+        $input = Request::input();
+
+        try {
+            //参数校验
+            $input = $this->check($input);
+
+        } catch (Exception $e) {
+            return $this->responseError($e->getMessage());
+        }
+
+        try {
+            $member = \JWTAuth::parseToken()->authenticate();
+            if (!$member) {
+                return $this->responseError('无效的token,请重新登录', 401);
+            }
+        } catch (Exception $e) {
+            return $this->responseError($e->getMessage(), 401);
+        }
+
+        $input['state'] = Certification::STATE_CERTIFING;
+
+        $certification = $member->certification()->first();
+        if ($certification) {
+            $result = $certification->update($input);
+        } else {
+            $result = $member->certification()->create($input);
+        }
+
+        if (empty($result)) {
+            return $this->responseError('认证失败，请稍后再试');
+        }
+
+        return $this->responseSuccess();
+
+    }
+
+    /**
+     * @SWG\Get(
+     *   path="/member/certify/result",
+     *   summary="获取教师认证结果",
+     *   tags={"/member 用户"},
+     *   @SWG\Response(
+     *     response=200,
+     *     description="获取成功"
+     *   ),
+     *   @SWG\Response(
+     *     response="404",
+     *     description="获取失败"
+     *   )
+     * )
+     */
+    public function detail()
+    {
+        try {
+            $member = \JWTAuth::parseToken()->authenticate();
+            if (!$member) {
+                return $this->responseError('无效的token,请重新登录', 401);
+            }
+        } catch (Exception $e) {
+            return $this->responseError($e->getMessage(), 401);
+        }
+
+        $result = $member->certification()->select('id as cerify_id', 'member_id', 'name', 'avatar_url', 'title', 'card_photo', 'degree', 'reason', 'state')->first();
+
+        if ($result) {
+            $result->avatar_url = get_file_url($result->avatar_url);
+            $result->card_photo = get_file_url($result->card_photo);
+        }
+
+        return $this->responseSuccess($result);
+    }
+
+}

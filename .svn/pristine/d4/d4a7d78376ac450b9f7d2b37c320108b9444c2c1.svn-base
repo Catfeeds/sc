@@ -1,0 +1,46 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: bnqc
+ * Date: 18-5-19
+ * Time: 下午1:39
+ */
+
+namespace App\Http\Controllers;
+
+use App\Models\DataSource;
+use App\Models\Live;
+use App\Models\LiveMember;
+use Response;
+use Request;
+
+class LiveMemberController
+{
+
+    public function index($live_id)
+    {
+        return view('admin.lives.enrollment', compact('live_id'));
+    }
+
+    public function table()
+    {
+        $input['live_id'] = Request::get('live_id');
+        $input['offset'] = Request::get('offset');
+        $input['limit'] = Request::get('limit');
+
+        $live = Live::find($input['live_id']);
+        $lists = $live->members()->skip($input['offset'])->limit($input['limit'])->get();
+        $count = $live->members()->count();
+
+        foreach ($lists as $k => $list) {
+            $list->room_id = $list->pivot->room_id;
+            $list->state_name = LiveMember::STATES[$list->pivot->state];
+        }
+
+        $ds = New DataSource();
+        $ds->total = $count;
+        $ds->rows = $lists;
+
+        return Response::json($ds);
+    }
+}

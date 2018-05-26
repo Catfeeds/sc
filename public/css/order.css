@@ -1,0 +1,153 @@
+.o-fixed{
+    height: 305px;
+    width: 100%;
+}
+.o-fixed .o-header{
+    height: 166px;
+    background: #ffcc42;
+}
+.o-fixed .o-header .title{
+    width: 620px;
+    float: left;
+    height: 168px;
+    line-height: 168px;
+    text-align: center;
+    font-size: 48px;
+    color: #fff;
+}
+.o-fixed .o-header .c-title{
+    width: 60%;
+    float: left;
+    height: 166px;
+    line-height: 166px;
+    text-align: center;
+    font-size: 48px;
+    color: #fff;
+}
+.o-fixed ul.order{
+    width: 100%;
+    height: 140px;
+    margin: 0 auto;
+    border-bottom: 1px solid #1b1b1b;
+    background: #fff;
+}
+.o-fixed ul.order li{
+    width: 20%;
+    float: left;
+    text-align: center;
+    line-height: 140px;
+}
+.o-fixed ul.order li.active{
+    border-bottom: 2px solid #e71f19;
+}
+.o-fixed ul.order li.active a{
+    color: #e71f19;
+}
+.o-fixed .header-nav{
+    top: 165px;
+}
+
+ul.list li{
+    background: #fff;
+    margin-top: 16px;
+    padding: 48px;
+}
+ul.list li span{
+    display: inline-block;
+}
+ul.list li .w-addr{
+    height: 90px;
+    line-height: 90px;
+    font-weight: bold;
+}
+ul.list li .receiver{
+    float: left;
+}
+ul.list li .tel{
+    float: right;
+}
+ul.list li .addr-detail{
+    height: 90px;
+    color: #7c7c7d;
+    font-size: 30px;
+    background: url('../images/addr_bg.png') no-repeat 0 0;
+    padding-left: 36px;
+}
+.c-goods ul{
+    position: relative;
+}
+.c-goods .status{
+    color: #e60012ba;
+    display: inline-block;
+    height: 60px;
+    line-height: 60px;
+    text-align: center;
+    font-size: 40px;
+    position: absolute;
+    top: 9px;
+    right: 9px;
+    border: 2px solid #eee;
+    padding: 2px 4px;
+}
+.c-goods ul li.op{
+    height: 150px;
+    border-top: 2px solid #eee;
+    margin-left: 0;
+}
+.c-goods ul li.op .action{
+    float: right;
+    line-height: 90px;
+    margin-right: 2%;
+    width: 15%;
+    border: 2px solid #eee;
+    margin-top: 30px;
+}
+ul.pay{
+    width: 100%;
+}
+ul.pay li{
+    padding: 30px 60px;
+    min-height: 450px;
+}
+ul.pay li h5{
+    width: 100%;
+    height: 160px;
+    line-height: 160px;
+    text-align: left;
+    color: #393a3f;
+    display: inline-block;
+}
+
+ul.pay li .payment{
+    float: left;
+    display: inline-block;
+    width: 500px;
+    line-height: 130px;
+    height: 130px;
+    position: relative;
+}
+ul.pay li .payment .pay-img{
+    display: inline-block;
+}
+ul.pay li .payment .payname{
+    display: inline-block;
+    position: absolute;
+    top: -27px;
+    left: 100px;
+}
+ul.pay li .price{
+    width: 46%;
+    height: 200px;
+    line-height: 200px;
+    text-align: center;
+    color: #393a3f;
+    margin-right: 2%;
+    margin-top: 2%;
+    border:5px solid #ffcc42 ;
+    border-radius: 14px;
+    float: left;
+}
+ul.pay li .active{
+    background: #ffcc42;
+    color: #fff;
+}

@@ -1,0 +1,210 @@
+@foreach($_GET as $k => $v)
+    <input type="hidden" id="{{ $k }}" name="{{ $k }}" value="{{ $v }}">
+@endforeach
+<ul id="tabs" class="nav nav-tabs">
+    <li class="active">
+        <a href="#tab_course_basic" data-toggle="tab">基本信息</a>
+    </li>
+</ul>
+
+<div class="tab-content">
+    <div id="tab_course_basic" class="tab-pane fade in active padding-t-15">
+
+        <div class="form-group">
+            {!! Form::label('title', '标题：', ['class' => 'control-label col-sm-1']) !!}
+            <div class="col-sm-11">
+                {!! Form::text('title', null, ['class'=>'form-control']) !!}
+            </div>
+        </div>
+        <div class="form-group">
+            {!! Form::label('subtitle', '子标题：', ['class'=>'control-label col-sm-1']) !!}
+            <div class="col-sm-11">
+                {!! Form::text('subtitle', null, ['class'=>'form-control']) !!}
+            </div>
+        </div>
+        <div class="form-group">
+            {!! Form::label('intro', '简介：', ['class'=>'control-label col-sm-1']) !!}
+            <div class="col-sm-11">
+                {!! Form::textarea('intro', null, ['class'=>'form-control', 'rows' =>'3']) !!}
+            </div>
+        </div>
+        <div class="form-group">
+            {!! Form::label('type', '课程难度：', ['class'=>'control-label col-sm-1']) !!}
+            <div class="col-sm-2">
+                {!! Form::select('type', string_to_option('初级,中级,高级'), null, ['class'=>'form-control']) !!}
+            </div>
+            {!! Form::label('member_id', '讲师：', ['class'=>'control-label col-sm-1']) !!}
+            <div class="col-sm-2">
+                <select name="member_id" class="form-control">
+                    @foreach($member as $mem)
+                        <option value="{{ $mem->id }}"
+                                @if(isset($content))
+                                selected="{{ $mem->id == $content->member_id ? "selected" : '' }}"
+                                @endif >
+                            {{ $mem->nick_name }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+
+            {!! Form::label(null, '是否免费', ['class'=>'control-label col-sm-1']) !!}
+            <div class="col-sm-1">
+                <input id="isfree"
+                       @if(isset($content))
+                       {{ $content->is_free ? 'checked="checked"': '' }}
+                       @else
+                       checked="checked"
+                       @endif
+                       name="is_free" value="1" type="radio">是
+
+                <input id="nofree"
+                       @if(isset($content))
+                       {{ $content->is_free ? '': 'checked="checked"' }}
+                       @endif
+                       name="is_free" value="0" type="radio">否
+            </div>
+
+            <div id="prices"
+                 @if(isset($content))
+                 style="display:{{ $content->is_free ? "none" : "block" }}"
+                 @else
+                 style="display: none;"
+                    @endif
+            >
+                {!! Form::label(null, '课程价格：', ['class'=>'control-label col-sm-1']) !!}
+                <div class="col-sm-2">
+                    {!! Form::text('price', null, ['class'=>'form-control', 'placeholder'=>"单位（元）", 'id'=>'price']) !!}
+                </div>
+            </div>
+
+            <script>
+                var nofree = $('#nofree');
+                var isfree = $('#isfree');
+                var prices = $('#prices');
+                var price = $('#price');
+
+                        @if(isset($content))
+                        {{ $price = $content->price }}
+                var old = {{ $price }}
+                        @endif
+                    nofree.click(function () {
+                        prices.css('display', 'block');
+                    })
+
+                isfree.click(function () {
+                    prices.css('display', 'none');
+                    price.val(old);
+                })
+
+            </script>
+        </div>
+        <div class="form-group">
+            <div class="col-sm-11">
+                {!! Form::hidden('cover_url', null, ['class'=>'form-control', 'readonly', 'id'=>'cover_url']) !!}
+            </div>
+        </div>
+        <div class="form-group">
+            {!! Form::label('cover_url', '封面图：', ['class'=>'control-label col-sm-1']) !!}
+            <div class="col-sm-11">
+                <h5>您所选择的文件列表：</h5>
+                <div id="ossfile-cover_url"></div>
+
+                <br/>
+                <div class="show-oss-img-cover_url">
+                    @if(isset($content))
+                        <img src="{{ empty($content->cover_url) ? '' : get_file_url($content->cover_url) }}"
+                             width="100px">
+                    @endif
+                </div>
+                <div id="container-cover_url">
+                    <a id="selectfiles_cover_url" href="javascript:void(0)"
+                       class='oss-btn'>上传图片</a>
+                    <div class="oss-img-uri-cover_url">
+                        <input type="hidden" value="" class="cover_url">
+                    </div>
+                </div>
+                <br/>
+            </div>
+        </div>
+        <input type="hidden" value="{{ $element }}" id="element" name="element">
+        <script>
+            var cover_url_preview = $('#cover_url').val();
+            if (cover_url_preview.length > 0) {
+                cover_url_preview = ['<img height="240" src="' + cover_url_preview + '" class="kv-preview-data file-preview-image">'];
+            }
+        </script>
+
+        <div class="form-group">
+            <div class="col-sm-11">
+                {!! Form::hidden('poster_url', null, ['class'=>'form-control', 'readonly', 'id'=>'poster_url']) !!}
+            </div>
+        </div>
+        <div class="form-group">
+            {!! Form::label('poster_url', '海报图：', ['class'=>'control-label col-sm-1']) !!}
+            <div class="col-sm-11">
+                <h5>您所选择的文件列表：</h5>
+                <div id="ossfile-poster_url"></div>
+
+                <br/>
+                <div class="show-oss-img-poster_url">
+                    @if(!empty($content->poster_show_url))
+                        <img src="{{ get_file_url($content->poster_show_url) }}" width="100px">
+                    @endif
+                </div>
+                <div id="container-poster_url">
+                    <a id="selectfiles_poster_url" href="javascript:void(0)"
+                       class='oss-btn'>上传图片</a>
+                    <div class="oss-img-uri-poster_url">
+                        <input type="hidden" value="" class="poster_url">
+                    </div>
+                </div>
+                <br/>
+            </div>
+        </div>
+        <script>
+            var poster_url_preview = $('#poster_url').val();
+            if (poster_url_preview.length > 0) {
+                poster_url_preview = ['<img height="240" src="' + poster_url_preview + '" class="kv-preview-data file-preview-image">'];
+            }
+        </script>
+
+    </div>
+
+</div>
+
+<div class="box-footer">
+    <button type="button" class="btn btn-default"
+            onclick="location.href='{{ isset($back_url) ? $back_url : $base_url }}';"> 取　消
+    </button>
+    <button type="submit" class="btn btn-info pull-right" id="submit">保　存</button>
+</div>
+
+<script>
+    $(document).ready(function () {
+        $('.date').datetimepicker({
+            format: 'YYYY-MM-DD HH:mm:ss',
+            locale: "zh-CN",
+            toolbarPlacement: 'bottom',
+            showClear: true,
+        });
+
+        $('#submit').click(function () {
+            var ret = true;
+            $('.file').each(function () {
+                var files = $(this).fileinput('getFileStack');
+
+                if (files.length > 0) {
+                    return ret = toast('info', '请先上传文件!');
+                }
+            });
+
+            return ret;
+        });
+    });
+
+
+    $('.select2').select2({
+        tags: true,
+        tokenSeparators: [',', ' ']
+    });
+</script>

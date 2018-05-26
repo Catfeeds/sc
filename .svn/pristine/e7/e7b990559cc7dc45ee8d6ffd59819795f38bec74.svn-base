@@ -1,0 +1,105 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Events\UserLogEvent;
+use App\Models\Category;
+use App\Models\UserLog;
+use App\Models\Coupon;
+use Request;
+use Response;
+
+/**
+ * 优惠券
+ */
+class CouponController extends Controller
+{
+    protected $base_url = '/admin/coupons';
+    protected $view_path = 'admin.coupons';
+
+    public function __construct()
+    {
+    }
+
+    public function index()
+    {
+        return view($this->view_path . '.index', ['base_url' => $this->base_url]);
+    }
+
+    public function create()
+    {
+        return view('admin.coupons.create', ['base_url' => $this->base_url]);
+    }
+
+    public function edit($id)
+    {
+        $index = Coupon::find($id);
+
+        return view('admin.coupons.edit', ['content' => $index, 'base_url' => $this->base_url]);
+    }
+
+    public function store()
+    {
+        $input = Request::all();
+
+        $index = Coupon::stores($input);
+
+        event(new UserLogEvent(UserLog::ACTION_CREATE . '优惠券', $index->id, Coupon::MODEL_CLASS));
+
+        \Session::flash('flash_success', '添加成功');
+        return redirect($this->base_url);
+    }
+
+    public function update($id)
+    {
+        $input = Request::all();
+        $index = Coupon::updates($id, $input);
+
+        event(new UserLogEvent(UserLog::ACTION_UPDATE . '优惠券', $index->id, Coupon::MODEL_CLASS));
+
+        \Session::flash('flash_success', '修改成功!');
+        return redirect($this->base_url);
+    }
+
+    public function save($id)
+    {
+        $live = Coupon::find($id);
+
+        if (empty($live)) {
+            return;
+        }
+
+        $live->update(Request::all());
+    }
+
+    public function sort()
+    {
+        return Coupon::sort();
+    }
+
+    public function state()
+    {
+        $input = request()->all();
+        Coupon::state($input);
+
+        $ids = $input['ids'];
+        $stateName = Coupon::getStateName($input['state']);
+
+        //记录日志
+        foreach ($ids as $id) {
+            event(new UserLogEvent('变更' . '优惠券' . UserLog::ACTION_STATE . ':' . $stateName, $id, Coupon::MODEL_CLASS));
+        }
+
+    }
+
+    public function table()
+    {
+        return Coupon::table();
+    }
+
+    public function categories()
+    {
+        return Response::json(Category::tree('1', '0', '优惠券', false));
+    }
+
+}

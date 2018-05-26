@@ -1,0 +1,243 @@
+<?php
+
+namespace App\Models;
+
+use Exception;
+use Request;
+use Response;
+use Course;
+
+class Chapter extends BaseModule
+{
+    const STATE_DELETED = 0;
+    const STATE_NORMAL = 1;
+    const STATE_CANCELED = 2;
+    const STATE_PUBLISHED = 9;
+
+    const SORT_TIME = 0;
+    const SORT_HOT = 1;
+
+    const STATES = [
+        0 => '已删除',
+        1 => '未发布',
+        2 => '已撤回',
+        9 => '已发布',
+    ];
+
+    const STATE_PERMISSIONS = [
+        0 => '@chapter-delete',
+        2 => '@chapter-cancel',
+        9 => '@chapter-publish',
+    ];
+
+    protected $fillable = ['parent_id', 'course_id', 'sort', 'seq', 'title', 'state', 'user_id'];
+
+    protected $entities = [];
+
+    public function lessons()
+    {
+        return $this->hasMany(Lesson::class);
+    }
+
+    public function member()
+    {
+        return $this->belongsTo(Member::class);
+    }
+
+    public function previous()
+    {
+        return static::where('site_id', $this->site_id)
+            ->where('state', $this->state)
+            ->where('sort', '>', $this->sort)
+            ->orderBy('sort', 'desc')
+            ->first();
+    }
+
+    public function next()
+    {
+        return static::where('site_id', $this->site_id)
+            ->where('state', $this->state)
+            ->where('sort', '<', $this->sort)
+            ->orderBy('sort', 'desc')
+            ->first();
+    }
+
+    public static function stores($input)
+    {
+        $input['state'] = static::STATE_PUBLISHED;
+
+        $moment = static::create($input);
+
+        //保存图片集
+        if (isset($input['images']) && !empty($input['images'])) {
+            Item::sync(Item::TYPE_IMAGE, $moment, $input['images']);
+        }
+
+        return $moment;
+    }
+
+    public static function getChapterList($id)
+    {
+        return static::where('state', 9)->where('course_id', $id)->where('parent_id', 0)->orderBy('sort')->get();
+    }
+
+    public static function updates($id, $input)
+    {
+        $image = static::find($id);
+
+        $image->update($input);
+
+        //保存图片集
+        if (isset($input['images'])) {
+            Item::sync(Item::TYPE_IMAGE, $image, $input['images']);
+
+        }
+
+        //保存音频集
+        if (isset($input['audios'])) {
+            Item::sync(Item::TYPE_AUDIO, $image, $input['audios']);
+        }
+
+        //保存视频集
+        if (isset($input['videos'])) {
+            Item::sync(Item::TYPE_VIDEO, $image, $input['videos']);
+        }
+
+        //保存标签
+        if (isset($input['tags'])) {
+            Tag::sync($image, $input['tags']);
+        }
+
+        return $image;
+    }
+
+    public static function table()
+    {
+        $filters = Request::all();
+
+        $offset = Request::get('offset') ? Request::get('offset') : 0;
+        $limit = Request::get('limit') ? Request::get('limit') : 20;
+
+        $ds = new DataSource();
+        $images = static::with('user')
+            ->filter($filters)
+            ->orderBy('top', 'desc')
+            ->orderBy('sort', 'desc')
+            ->skip($offset)
+            ->limit($limit)
+            ->get();
+
+        $ds->total = static::filter($filters)
+            ->count();
+
+        $images->transform(function ($image) {
+            $attributes = $image->getAttributes();
+
+            //实体类型
+            foreach ($image->entities as $entity) {
+                $entity_map = str_replace('_id', '_name', $entity);
+                $entity = str_replace('_id', '', $entity);
+                $attributes[$entity_map] = empty($image->$entity) ? '' : $image->$entity->name;
+            }
+
+            //日期类型
+            foreach ($image->dates as $date) {
+                $attributes[$date] = empty($image->$date) ? '' : $image->$date->toDateTimeString();
+            }
+            $attributes['tags'] = implode(',', $image->tags()->pluck('name')->toArray());
+            $attributes['state_name'] = $image->stateName();
+            $attributes['created_at'] = empty($image->created_at) ? '' : $image->created_at->toDateTimeString();
+            $attributes['updated_at'] = empty($image->updated_at) ? '' : $image->updated_at->toDateTimeString();
+            return $attributes;
+        });
+
+        $ds->rows = $images;
+
+        return Response::json($ds);
+    }
+
+    /**
+     * 排序
+     */
+    public static function sort()
+    {
+        $select_id = request('select_id');
+        $place_id = request('place_id');
+        $move_down = request('move_down');
+
+        $select = self::find($select_id);
+        $place = self::find($place_id);
+
+        if (empty($select) || empty($place)) {
+            return Response::json([
+                'status_code' => 404,
+                'message' => 'ID不存在',
+            ]);
+        }
+
+        if ($select->top && !$place->top) {
+            return Response::json([
+                'status_code' => 404,
+                'message' => '置顶记录不允许移至普通位置',
+            ]);
+        }
+
+        if (!$select->top && $place->top) {
+            return Response::json([
+                'status_code' => 404,
+                'message' => '普通记录不允许移至置顶位置',
+            ]);
+        }
+
+        $sort = $place->sort;
+        try {
+            if ($move_down) {
+                //下移
+                //增加移动区间的排序值
+                self::where('sort', '>=', $place->sort)
+                    ->where('sort', '<', $select->sort)
+                    ->increment('sort');
+            } else {
+                //上移
+                //减少移动区间的排序值
+                self::where('sort', '>', $select->sort)
+                    ->where('sort', '<=', $place->sort)
+                    ->decrement('sort');
+            }
+        } catch (Exception $e) {
+            return Response::json([
+                'status_code' => 500,
+                'message' => $e->getMessage(),
+            ]);
+        }
+        $select->sort = $sort;
+        $select->save();
+
+        return Response::json([
+            'status_code' => 200,
+            'message' => 'success',
+        ]);
+    }
+
+    public static function sorts($menus, $parent_id = 0)
+    {
+        for ($i = 0; $i < count($menus); $i++) {
+            $menu = Chapter::find($menus[$i]->id);
+            $menu->parent_id = $parent_id;
+            $menu->sort = $i + 1;
+            $menu->seq = $i + 1;
+            $menu->save();
+
+            if (isset($menus[$i]->children)) {
+                for ($j = 0; $j < count($menus[$i]->children); $j++) {
+                    $lesson = Lesson::find($menus[$i]->children[$j]->id);
+                    $lesson->chapter_id = $menus[$i]->id;
+                    $lesson->sort = $j + 1;
+                    $lesson->seq = $j + 1;
+                    $lesson->save();
+                }
+            }
+
+        }
+    }
+}

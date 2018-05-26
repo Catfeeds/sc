@@ -1,0 +1,209 @@
+<?php
+
+use Illuminate\Http\Request;
+
+/*
+|--------------------------------------------------------------------------
+| API Routes
+|--------------------------------------------------------------------------
+|
+| Here is where you can register API routes for your application. These
+| routes are loaded by the RouteServiceProvider within a group which
+| is assigned the "api" middleware group. Enjoy building your API!
+|
+*/
+
+$api = app('Dingo\Api\Routing\Router');
+$api->version('v1', function ($api) {
+
+    $api->group(['namespace' => 'App\Api\Controllers'], function ($api) {
+        /**
+         * 通用
+         */
+        $api->post('token/refresh', 'MemberController@refresh');
+        $api->get('app/check', 'AppController@check');
+        $api->get('options', 'OptionController@lists');
+        $api->post('files/upload', 'FileController@upload');
+        $api->get('index', 'HomeController@index');
+
+        /**
+         * 栏目
+         */
+        $api->get('category/lists', 'CategoryController@lists');
+        $api->get('category/detail', 'CategoryController@detail');
+        $api->get('category/info', 'CategoryController@info');
+
+        /**
+         * 评论
+         */
+        $api->get('comments', 'CommentController@lists');
+        $api->post('comments/create', 'CommentController@create');
+        $api->get('comments/like', 'CommentController@like');
+
+        /**
+         * 收藏
+         */
+        $api->get('favorites', 'FavoriteController@lists');
+        $api->post('favorites/create', 'FavoriteController@create');
+        $api->get('favorites/destroy', 'FavoriteController@destroy');
+        $api->get('favorites/delete', 'FavoriteController@delete');
+        $api->get('favorites/exist', 'FavoriteController@exist');
+
+        /**
+         * 关注
+         */
+        $api->get('follow/lists', 'FollowController@lists');
+        $api->get('fans/lists', 'FollowController@fans');
+        $api->post('follow/add', 'FollowController@add');
+        $api->post('follow/delete', 'FollowController@delete');
+
+        /**
+         * 会员
+         */
+        $api->get('login', 'MemberController@login');
+        $api->post('register', 'MemberController@register');
+        $api->get('member/mobile/captcha', 'MemberController@getCaptcha');
+        $api->get('member/homepage', 'MemberController@homepage');
+        $api->get('member/course/lists', 'MemberController@courses');
+        $api->post('member/password/reset', 'MemberController@resetPassword');
+        $api->get('member/detail', 'MemberController@detail');
+        $api->post('member/update', 'MemberController@update');
+        $api->get('member/collection/lists', 'MemberController@collections');
+        $api->get('member/order/lists', 'MemberController@orders');
+        $api->get('member/reservation/lists', 'MemberController@reservations');
+
+        /**
+         * 教师认证
+         */
+        $api->post('member/certify', 'CertificationController@certify');
+        $api->get('member/certify/result', 'CertificationController@detail');
+
+        /**
+         * 消息
+         */
+        $api->get('messages/owns', 'MessageController@owns');
+
+        /**
+         * 图库
+         */
+        $api->post('gallery/image/like', 'ImageController@like');
+        $api->post('gallery/image/dislike', 'ImageController@dislike');
+        $api->get('gallery/image/lists', 'ImageController@lists');
+        $api->get('gallery/image/detail', 'ImageController@detail');
+        $api->get('gallery/image/explore', 'ImageController@explore');
+        $api->get('gallery/image/relate', 'ImageController@relate');
+        $api->get('gallery/categories', 'CategoryController@lists');
+        $api->get('gallery/lists', 'GalleryController@lists');
+        $api->post('gallery/collect', 'GalleryController@collect');
+        $api->post('gallery/uncollect', 'GalleryController@uncollect');
+        $api->get('gallery/search', 'ImageController@search');
+        $api->get('gallery/search/tag', 'ImageController@tag');
+
+        /**
+         * 社区
+         */
+        $api->post('moment/add', 'MomentController@add');
+        $api->get('moment/lists', 'MomentController@lists');
+        $api->post('moment/comment/add', 'MomentController@comment');
+        $api->get('moment/detail', 'MomentController@detail');
+        $api->get('moment/comments', 'MomentController@comments');
+        $api->post('moment/like', 'MomentController@like');
+        $api->post('moment/dislike', 'MomentController@dislike');
+        $api->post('moment/like/lists', 'MomentController@likes');
+        $api->post('moment/report', 'MomentController@report');
+        $api->get('moment/topic/lists', 'MomentController@topics');
+        $api->post('moment/delete', 'MomentController@delete');
+
+        /**
+         * 评论
+         */
+        $api->post('comment/delete', 'CommentController@delete');
+
+        /**
+         * 课程
+         */
+        $api->get('course/lists', 'CourseController@lists');
+        $api->get('course/detail', 'CourseController@detail');
+        $api->post('course/discuss', 'CourseController@discuss');
+        $api->get('course/discuss/lists', 'CourseController@discussions');
+        $api->get('course/search', 'CourseController@search');
+        $api->get('course/quick/search', 'CourseController@quickSearch');
+        $api->post('course/evaluate', 'CourseController@evaluate');
+        $api->get('course/evaluate/lists', 'CourseController@evaluations');
+        $api->post('course/discuss/like', 'CourseController@like');
+        $api->post('course/discuss/dislike', 'CourseController@dislike');
+        $api->post('course/collect', 'CourseController@collect');
+        $api->post('course/uncollect', 'CourseController@uncollect');
+        $api->post('course/view/update', 'CourseController@viewUpdate');
+        $api->get('course/view/lists', 'CourseController@viewLists');
+        $api->get('search/hots', 'CourseController@hots');
+
+        /**
+         * 约课
+         */
+        //教师
+        $api->get('teacher/city/lists', 'TeacherController@cities');
+        $api->get('reservation/teacher/lists', 'TeacherController@lists');
+        $api->get('reservation/teacher/detail', 'TeacherController@detail');
+        $api->post('reservation/teacher/comments', 'TeacherController@comments');
+        $api->post('reservation/teacher/update', 'TeacherController@update');
+        //课程
+        $api->get('/reservation/course/lists', 'OfflineCourseController@lists');
+        $api->post('reservation/course/add', 'OfflineCourseController@add');
+        $api->post('reservation/course/update', 'OfflineCourseController@update');
+        $api->post('reservation/course/delete', 'OfflineCourseController@delete');
+        //约课记录
+        $api->get('reservation/record/lists', 'RecordController@lists');
+        $api->post('reservation/confirm', 'RecordController@confirm');
+        $api->post('reservation/accept', 'RecordController@accept');
+        $api->post('reservation/price/diff', 'RecordController@diff');
+        $api->post('reservation/comment/add', 'OfflineCommentController@add');
+
+        /**
+         * 直播
+         */
+        $api->get('live/top', 'LiveController@top');
+        $api->get('live/detail', 'LiveController@detail');
+        $api->get('live/lists', 'LiveController@lists');
+
+        /**
+         * 资讯
+         */
+        $api->get('article/lists', 'ArticleController@lists');
+        $api->get('article/detail', 'ArticleController@detail');
+        $api->get('article/comment/lists', 'ArticleController@comments');
+        $api->post('article/comment/add', 'ArticleController@comment');
+
+        /**
+         * 活动
+         */
+        $api->get('activity/lists', 'ActivityController@lists');
+        $api->get('activity/detail', 'ActivityController@detail');
+
+        /**
+         * 通用
+         */
+        $api->get('area/lists', 'DictionaryController@area');
+        $api->get('oss/token', 'OssUploadController@getUploadToken');
+        $api->get('recommend/member/lists', 'HomeController@recommends');
+
+        /**
+         * 支付
+         */
+        $api->post('order/create', 'OrderController@create');
+        $api->post('alipay/notify', 'OrderController@aliNotify');
+        $api->post('wxpay/notify', 'OrderController@wxNotify');
+        $api->post('push/test', 'PushController@pushToOne');
+
+        /**
+         * 苹果内购
+         */
+
+        $api->post('apple/order/create', 'ApplePayController@createOrder');
+
+    });
+
+    $api->group(['namespace' => 'App\Api\Controllers', 'middleware' => 'throttle:60000'], function ($api) {
+        $api->get('access/log', 'AccessController@log');
+    });
+});
